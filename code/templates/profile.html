@@ -3,13 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile</title>
+    <title>Profil</title>
 </head>
 <body>
-    <h2>{{ profile.user.name }}'s Profile</h2>
-    <p><strong>Age:</strong> {{ profile.user.age }}</p>
-    <p><strong>Hobbies:</strong> {{ profile.user.hobbies | join(", ") }}</p>
-
-    <a href="{{ url_for('logout') }}">Logout</a>
+    <h2>Profil uživatele {{ profile.get("name") }}</h2>
+    <ul>
+        <li>Věk: {{ profile.get("age") }}</li>
+        <li>Záliby:
+            <ul>
+                {% if profile.get("hobbies") %}
+                    {% for hobby in profile.get("hobbies") %}
+                        <li>{{ hobby }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>Žádné záliby</li>
+                {% endif %}
+            </ul>
+        </li>
+        <li>Body sluníček: {{ profile.get("sun_points") }}</li>
+        <li>Body ohýnku: {{ profile.get("fire_points") }}</li>
+    </ul>
+    <!-- Tlačítko pro odhlášení -->
+    <form action="{{ url_for('logout') }}" method="post">
+        <button type="submit">Odhlásit se</button>
+    </form>
 </body>
 </html>
+

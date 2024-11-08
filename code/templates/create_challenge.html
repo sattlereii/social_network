@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Challenge</title>
+</head>
+<body>
+    <h2>Create a New Challenge</h2>
+    <form action="{{ url_for('create_challenge_route') }}" method="POST">
+        <label for="title">Challenge Title:</label>
+        <input type="text" name="title" required><br><br>
+
+        <label for="description">Description:</label>
+        <textarea name="description" required></textarea><br><br>
+
+        <label for="duration">Duration (days):</label>
+        <input type="number" name="duration" required><br><br>
+
+        <button type="submit">Create Challenge</button>
+    </form>
+</body>
+</html>

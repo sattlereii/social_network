@@ -3,24 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matchomat</title>
+    <title>Sociální Síť</title>
+    <style>
+        /* Základní styly pro hlavičku a obsah */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #f8f8f8;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        header nav a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #333;
+        }
+        header nav {
+            display: flex;
+            align-items: center;
+        }
+        header nav .username {
+            margin-left: auto;
+            font-weight: bold;
+        }
+        main {
+            padding: 20px;
+        }
+    </style>
 </head>
 <body>
+    <!-- Hlavička stránky -->
     <header>
-        <h1>Matchomat</h1>
+        <h1><a href="{{ url_for('home') }}">Sociální Síť</a></h1>
+        <nav>
+            <a href="{{ url_for('search') }}">Hledat</a>
+            <a href="{{ url_for('matches') }}">Shody</a>
+            <span class="username"><a href="{{ url_for('user_profile') }}">{{ session.get("username") }}</a></span>
+        </nav>
     </header>
-    <nav>
-        <ul>
-            <li><a href="/home">Domů</a></li>
-            <li><a href="/search">Hledej</a></li>
-            <li><a href="/matches">Shody</a></li>
-        </ul>
-    </nav>
+
     <main>
         {% block content %}{% endblock %}
     </main>
-    <footer>
-        <p>Matchomat, Beránek Pavel 2023</p>
-    </footer>
 </body>
 </html>
