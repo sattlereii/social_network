@@ -40,11 +40,20 @@ def create_challenge(graph, username, title, description, duration_days):
     challenge_node = Node("Challenge", title=title, description=description, creator=username, end_date=end_date.isoformat())
     creator_node = get_user_node(graph, username)
     
+    # Vytvoření vztahu mezi uživatelem a výzvou
     created_rel = Relationship(creator_node, "CREATED", challenge_node)
     graph.create(challenge_node | created_rel)
     
     # Přidání bodů sluníček uživateli za vytvoření výzvy
     graph.run("MATCH (u:User {name: $username}) SET u.sun_points = u.sun_points + 2", username=username)
+
+def get_all_challenges(graph):
+    return graph.run("""
+        MATCH (c:Challenge)
+        RETURN c.title AS title, c.description AS description, c.creator AS creator, c.end_date AS end_date
+        ORDER BY c.end_date DESC
+    """).data()
+
 
 # Získání aktivních výzev
 def get_active_challenges(graph):
@@ -87,7 +96,8 @@ def available_matches(graph, username):
 
 # Získání uzlu uživatele podle jména
 def get_user_node(graph, username):
-    return graph.evaluate("MATCH (u:User {name: $username}) RETURN u")
+    return graph.evaluate("MATCH (u:User {name: $username}) RETURN u", username=username)
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -124,11 +134,41 @@ def login():
     return render_template("login.html")
 
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
 def logout():
     session.pop("username", None)
     flash("You have been logged out.")
     return redirect(url_for("login"))
+
+@app.route("/update_profile", methods=["POST"])
+def update_profile():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+    new_name = request.form.get("name")
+    new_password = request.form.get("password")
+    new_age = request.form.get("age")
+    new_hobbies = request.form.get("hobbies").split(",")
+
+    # Aktualizace uživatelských údajů v databázi
+    if new_password:
+        password_hash = generate_password_hash(new_password)
+        graph.run("""
+            MATCH (u:User {name: $username})
+            SET u.password = $password_hash
+        """, username=username, password_hash=password_hash)
+
+    graph.run("""
+        MATCH (u:User {name: $username})
+        SET u.name = $new_name, u.age = $new_age, u.hobbies = $new_hobbies
+    """, username=username, new_name=new_name, new_age=int(new_age), new_hobbies=new_hobbies)
+
+    # Aktualizujte jméno v session, pokud bylo změněno
+    session["username"] = new_name
+
+    flash("Profil byl úspěšně aktualizován.")
+    return redirect(url_for("user_profile"))
 
 @app.route("/")
 @app.route("/home")
@@ -138,7 +178,9 @@ def home():
 
     logged_user = session["username"]
     logged_user_info = get_logged_user_profile(graph, logged_user)
-    return render_template("home.html", profile=logged_user_info)
+    challenges = get_all_challenges(graph)  # Získání všech výzev
+    return render_template("home.html", profile=logged_user_info, challenges=challenges)
+
 
 
 @app.route("/search", methods=["GET", "POST"])

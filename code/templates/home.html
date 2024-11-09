@@ -1,12 +1,57 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h2>Vítej na Matchomatu</h2>
-<p>Zapaluj, nech se zapalovat a nalezni si zde svou drahou polovičku se kterou budete hořet.</p>
+    <h2>Vítej na Matchomatu</h2>
+    <p>Zapaluj, nech se zapalovat a nalezni si zde svou drahou polovičku se kterou budete hořet.</p>
 
-<h3>Statistiky</h3>
-<ul>
-  <li>Počet lidí, se kterými se ještě můžeš seznámit: {{ num_of_available_matches }}</li>
-  <li>Počet lidí, se kterými jsi již v páru: {{ num_of_matches }}</li>
-</ul>
+    <h3>Statistiky</h3>
+    <ul>
+        <li>Počet lidí, se kterými se ještě můžeš seznámit: {{ num_of_available_matches }}</li>
+        <li>Počet lidí, se kterými jsi již v páru: {{ num_of_matches }}</li>
+    </ul>
+
+    <h3>Výzvy</h3>
+    {% if challenges %}
+        <ul>
+            {% for challenge in challenges %}
+                <li>
+                    <h4>{{ challenge.title }}</h4>
+                    <p>{{ challenge.description }}</p>
+                    <p>Vytvořil: {{ challenge.creator }}</p>
+                    <p>Datum ukončení: {{ challenge.end_date }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Momentálně nejsou žádné výzvy.</p>
+    {% endif %}
+
+    <!-- Plovoucí tlačítko pro přidání nové výzvy -->
+    <a href="{{ url_for('create_challenge_route') }}" class="floating-btn">+</a>
+
+    <style>
+        /* Styl pro plovoucí tlačítko */
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            text-decoration: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s;
+        }
+
+        .floating-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
 {% endblock %}
+

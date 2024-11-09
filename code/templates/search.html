@@ -1,31 +1,21 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h2>Hledej</h2>
-<p>Zapal nebo uhas profil.</p>
+<h2>Vyhledávání</h2>
 {% if profile %}
-  <article class="card" style="width: 18rem;">
-      <!-- <img src="..." class="card-img-top" alt="..."> -->
-      <section class="card-body">
-        <h3 class="card-title">{{ profile.get("friend.name") }}</h5>
-        <ul class="card-text">
-          <li>Věk: {{ profile.get("friend.age") }}</li>
-          <li>Záliby:
-              <ul>
-              {% for hobby in profile.get("friend.hobbies") %}
-                  <li>{{ hobby }}</li>
-              {% endfor %}
-              </ul>
-          </li>
-        </ul>
-      </section>
-  </article>
-<form action="/search" method="post">
-  <input type="hidden" name="friend_name" value="{{ profile.get('friend.name') }}">
-  <button type="submit" class="btn btn-primary" name="date_choice" value="like">Like</button>
-  <button type="submit" class="btn btn-primary" name="date_choice" value="dislike">Dislike</button>
-</form>
+    <p>Profil uživatele: {{ profile.get("name") }}</p>
+    <p>Věk: {{ profile.get("age") }}</p>
+    <p>Záliby:</p>
+    <ul>
+        {% if profile.get("hobbies") %}
+            {% for hobby in profile.get("hobbies") %}
+                <li>{{ hobby }}</li>
+            {% endfor %}
+        {% else %}
+            <li>Žádné záliby</li>
+        {% endif %}
+    </ul>
 {% else %}
-  <p>Žádný profil nenalezen.</p>
+    <p>Nebyly nalezeny žádné potenciální shody.</p>
 {% endif %}
 {% endblock %}
