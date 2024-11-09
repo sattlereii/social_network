@@ -1,43 +1,68 @@
 {% extends "template.html" %}
 
 {% block content %}
-    <h2>Profil uživatele {{ profile.get("name") }}</h2>
+<h2>Profil uživatele {{ profile.name }}</h2>
 
-    <ul>
-        <li>Věk: {{ profile.get("age") }}</li>
-        <li>Body sluníček: {{ profile.get("sun_points") }}</li>
-        <li>Body ohýnku: {{ profile.get("fire_points") }}</li>
-    </ul>
-
-    <h3>Probíhající výzvy</h3>
-    {% if ongoing_challenges %}
+<ul>
+    <li>Věk: {{ profile.age }}</li>
+    <li>Záliby:
         <ul>
-            {% for challenge in ongoing_challenges %}
-                <li>
-                    <h4>{{ challenge.title }}</h4>
-                    <p>{{ challenge.description }}</p>
-                    <p>Datum ukončení: {{ challenge.end_date }}</p>
-                </li>
-            {% endfor %}
+            {% if profile.hobbies %}
+                {% for hobby in profile.hobbies %}
+                    <li>{{ hobby }}</li>
+                {% endfor %}
+            {% else %}
+                <li>Žádné záliby</li>
+            {% endif %}
         </ul>
-    {% else %}
-        <p>Nemáte žádné probíhající výzvy.</p>
-    {% endif %}
+    </li>
+    <li>Body sluníček: {{ profile.sun_points }}</li>
+    <li>Body ohýnku: {{ profile.fire_points }}</li>
+</ul>
 
-    <h3>Splněné výzvy</h3>
-    {% if completed_challenges %}
-        <ul>
-            {% for challenge in completed_challenges %}
-                <li>
-                    <h4>{{ challenge.title }}</h4>
-                    <p>{{ challenge.description }}</p>
-                    <p>Datum ukončení: {{ challenge.end_date }}</p>
-                    <p>Výsledek: {{ challenge.result }}</p>
-                    <p>Komentář: {{ challenge.comment }}</p>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Nemáte žádné splněné výzvy.</p>
-    {% endif %}
+<!-- Odkaz na úpravu profilu -->
+{% if session.get("username") == profile.name %}
+    <form action="{{ url_for('update_profile') }}" method="post" style="margin-top: 20px;">
+        <button type="submit">Upravit profil</button>
+    </form>
+{% endif %}
+
+<!-- Tlačítko pro odhlášení -->
+{% if session.get("username") == profile.name %}
+    <form action="{{ url_for('logout') }}" method="post" style="margin-top: 20px;">
+        <button type="submit">Odhlásit se</button>
+    </form>
+{% endif %}
+
+<h3>Probíhající výzvy</h3>
+{% if ongoing_challenges %}
+
+<ul>
+    {% for challenge in ongoing_challenges %}
+        <li>
+            <a href="{{ url_for('challenge_details', title=challenge.title) }}">{{ challenge.title }}</a> - končí {{ challenge.end_date }}
+        </li>
+    {% endfor %}
+</ul>
+{% else %}
+    <p>Momentálně se neúčastníte žádných výzev.</p>
+{% endif %}
+
+
+<h3>Splněné výzvy</h3>
+{% if completed_challenges %}
+
+<ul>
+    {% for challenge in completed_challenges %}
+        <li>
+            <a href="{{ url_for('challenge_details', title=challenge.title) }}">{{ challenge.title }}</a> - splněno<br>
+            Výsledek: {{ challenge.result }}<br>
+            Komentář: {{ challenge.comment }}
+        </li>
+    {% endfor %}
+</ul>
+{% else %}
+    <p>Nemáte žádné splněné výzvy.</p>
+{% endif %} 
 {% endblock %}
+

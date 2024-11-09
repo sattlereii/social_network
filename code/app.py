@@ -176,7 +176,10 @@ def update_profile():
     new_name = request.form.get("name")
     new_password = request.form.get("password")
     new_age = request.form.get("age")
-    new_hobbies = request.form.get("hobbies").split(",")
+
+    # Získáme hodnotu hobbies, pokud není zadána, nastavíme prázdný seznam
+    hobbies_input = request.form.get("hobbies")
+    new_hobbies = hobbies_input.split(",") if hobbies_input else []
 
     # Aktualizace uživatelských údajů v databázi
     if new_password:
@@ -189,13 +192,14 @@ def update_profile():
     graph.run("""
         MATCH (u:User {name: $username})
         SET u.name = $new_name, u.age = $new_age, u.hobbies = $new_hobbies
-    """, username=username, new_name=new_name, new_age=int(new_age), new_hobbies=new_hobbies)
+    """, username=username, new_name=new_name, new_age=int(new_age) if new_age else None, new_hobbies=new_hobbies)
 
     # Aktualizujte jméno v session, pokud bylo změněno
     session["username"] = new_name
 
     flash("Profil byl úspěšně aktualizován.")
     return redirect(url_for("user_profile"))
+
 
 @app.route("/")
 @app.route("/home")
@@ -225,20 +229,12 @@ def search():
             RETURN u.name AS name, 'user' AS type
         """, query=query).data()
 
-    elif search_type == "challenges_title":
-        # Hledání výzev s podobným názvem
+    elif search_type == "challenges":
+        # Hledání výzev s podobným názvem nebo popisem
         results = graph.run("""
             MATCH (c:Challenge)
-            WHERE toLower(c.title) CONTAINS toLower($query)
+            WHERE toLower(c.title) CONTAINS toLower($query) OR toLower(c.description) CONTAINS toLower($query)
             RETURN c.title AS title, c.description AS description, 'challenge' AS type
-        """, query=query).data()
-
-    elif search_type == "challenges_hashtag":
-        # Hledání výzev podle hashtagu
-        results = graph.run("""
-            MATCH (c:Challenge)-[:TAGGED_WITH]->(h:Hashtag)
-            WHERE toLower(h.name) CONTAINS toLower($query)
-            RETURN c.title AS title, c.description AS description, h.name AS hashtag, 'hashtag_challenge' AS type
         """, query=query).data()
 
     return render_template("search.html", results=results)
@@ -251,13 +247,21 @@ def user_profile():
 
     username = session["username"]
     user_info = get_logged_user_profile(graph, username)
-    
-    # Získání probíhajících výzev (připojených, ale nesplněných)
+
+    # Získání probíhajících a splněných výzev
     ongoing_challenges = graph.run("""
         MATCH (u:User {name: $username})-[:JOINED]->(c:Challenge)
         WHERE NOT (u)-[:COMPLETED]->(c)
         RETURN c.title AS title, c.description AS description, c.end_date AS end_date
     """, username=username).data()
+    
+    completed_challenges = graph.run("""
+        MATCH (u:User {name: $username})-[r:COMPLETED]->(c:Challenge)
+        RETURN c.title AS title, c.description AS description, c.end_date AS end_date, r.result AS result, r.comment AS comment
+    """, username=username).data()
+    
+    return render_template("profile.html", profile=user_info, ongoing_challenges=ongoing_challenges, completed_challenges=completed_challenges)
+
     
 @app.route("/profile/<username>")
 def users_profile(username):

@@ -40,10 +40,6 @@
             padding: 20px;
         }
     </style>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
-    
 </head>
 <body>
     <!-- Hlavička stránky -->
@@ -52,7 +48,8 @@
         <nav>
             <a href="{{ url_for('search') }}">Hledat</a>
             <a href="{{ url_for('matches') }}">Shody</a>
-            <span class="username"><a href="{{ url_for('user_profile') }}">{{ session.get("username") }}</a></span>
+            <span class="username"><a href="{{ url_for('user_profile', username=session.get('username')) }}">{{ session.get("username") }}</a></span>
+
         </nav>
     </header>
 
