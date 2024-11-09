@@ -10,3 +10,6 @@ všude bych chtěla rozklikavání na profil, at se někdo jiný může mrknou n
 přidat možnost se zapojit do výzvy a poté dát možnost ji dokončit za sebe a tím získat bod - hotovo
 
 zatím mě nic dalšího nenapadá :D
+
+
+tak jsem rozbila user profile - opravit musím ještě dnes
