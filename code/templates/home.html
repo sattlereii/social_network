@@ -17,16 +17,18 @@
             <li>
                 <h4>{{ challenge.title }}</h4>
                 <p>{{ challenge.description }}</p>
-                <p>Vytvořil: {{ challenge.creator }}</p>
+                <p>
+                    Vytvořil: 
+                    <a href="{{ url_for('users_profile', username=challenge.creator) }}">
+                        {{ challenge.creator }}
+                    </a>
+                </p>
                 <p>Datum ukončení: {{ challenge.end_date }}</p>
                 
                 {% if challenge.is_completed %}
-                    <!-- Zobrazení textu "Výzva splněna" po dokončení -->
                     <p><strong style="color: green;">Výzva splněna</strong></p>
                 {% elif challenge.is_joined %}
-                    <!-- Zobrazení tlačítka "Připojeno" a formuláře pro odeslání výsledku -->
                     <p><button style="background-color: #4CAF50; color: white; border: none; padding: 10px;">Připojeno</button></p>
-                    
                     <form action="{{ url_for('submit_result', title=challenge.title) }}" method="post" style="margin-top: 10px;">
                         <label for="result">Výsledek:</label>
                         <input type="text" id="result" name="result" placeholder="Např. 40 cviků" required>
@@ -36,9 +38,7 @@
                         
                         <button type="submit">Odeslat výsledek</button>
                     </form>
-                
                 {% else %}
-                    <!-- Tlačítko pro připojení k výzvě, pokud není připojen -->
                     <form action="{{ url_for('join_challenge_route', title=challenge.title) }}" method="post">
                         <button type="submit">Připojit se</button>
                     </form>
@@ -49,6 +49,7 @@
 {% else %}
     <p>Momentálně nejsou žádné výzvy.</p>
 {% endif %}
+
 
 
     <!-- Plovoucí tlačítko pro přidání nové výzvy -->

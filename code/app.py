@@ -33,10 +33,20 @@ def get_logged_user_profile(graph, username):
     """).data()
     return result[0] if result else {}
 
+def get_all_hashtags(graph):
+    """Načte všechny hashtagy z databáze."""
+    return graph.run("MATCH (h:Hashtag) RETURN h.name AS name").data()
+
+def add_hashtag(graph, name):
+    """Přidá nový hashtag do databáze, pokud ještě neexistuje."""
+    graph.run("""
+        MERGE (h:Hashtag {name: $name})
+    """, name=name)
+
 
 # Funkce pro vytvoření výzvy
-def create_challenge(graph, username, title, description, duration_days):
-    end_date = datetime.now() + timedelta(days=duration_days)
+def create_challenge(graph, username, title, description, duration, hashtags):
+    end_date = datetime.now() + timedelta(days=duration)
     challenge_node = Node("Challenge", title=title, description=description, creator=username, end_date=end_date.isoformat())
     creator_node = get_user_node(graph, username)
     
@@ -46,6 +56,14 @@ def create_challenge(graph, username, title, description, duration_days):
     
     # Přidání bodů sluníček uživateli za vytvoření výzvy
     graph.run("MATCH (u:User {name: $username}) SET u.sun_points = u.sun_points + 2", username=username)
+    
+    # Přidání vztahu k hashtagům
+    for hashtag in hashtags:
+        hashtag_node = graph.evaluate("MATCH (h:Hashtag {name: $name}) RETURN h", name=hashtag)
+        if hashtag_node:
+            hashtag_rel = Relationship(challenge_node, "TAGGED_WITH", hashtag_node)
+            graph.create(hashtag_rel)
+
 
 def get_all_challenges(graph, username):
     return graph.run("""
@@ -83,13 +101,7 @@ def join_challenge(graph, username, challenge_title, result=None, comment=None):
         if not existing_join:
             join_rel = Relationship(user_node, "JOINED", challenge_node)
             graph.create(join_rel)
-            
-            # Přidání bodů ohýnku a sluníčka
-            graph.run("""
-                MATCH (u:User {name: $username})
-                SET u.fire_points = u.fire_points + 1, u.sun_points = u.sun_points + 1
-            """, username=username)
-
+        
 # Získání archivu výzev
 def get_challenge_archive(graph):
     return graph.run("""
@@ -201,24 +213,36 @@ def home():
 
 @app.route("/search", methods=["GET", "POST"])
 def search():
-    if "username" not in session:
-        return redirect(url_for("login"))
+    query = request.args.get("query", "")
+    search_type = request.args.get("search_type", "users")
+    results = []
 
-    if request.method == "GET":
-        potential_matches = available_matches(graph, session["username"])
-        random_profile = choice(potential_matches) if potential_matches else None
-        return render_template("search.html", profile=random_profile)
-    else:
-        date_choice = request.form.get("date_choice")
-        friend_name = request.form.get("friend_name")
-        user_node = get_user_node(graph, session["username"])
-        friend_node = get_user_node(graph, friend_name)
-        if date_choice == "like":
-            new_relationship = Relationship(user_node, "LIKES", friend_node)
-        elif date_choice == "dislike":
-            new_relationship = Relationship(user_node, "DISLIKES", friend_node)
-        graph.create(new_relationship)
-        return redirect(url_for("search"))
+    if search_type == "users":
+        # Hledání uživatelů s podobným jménem
+        results = graph.run("""
+            MATCH (u:User)
+            WHERE toLower(u.name) CONTAINS toLower($query)
+            RETURN u.name AS name, 'user' AS type
+        """, query=query).data()
+
+    elif search_type == "challenges_title":
+        # Hledání výzev s podobným názvem
+        results = graph.run("""
+            MATCH (c:Challenge)
+            WHERE toLower(c.title) CONTAINS toLower($query)
+            RETURN c.title AS title, c.description AS description, 'challenge' AS type
+        """, query=query).data()
+
+    elif search_type == "challenges_hashtag":
+        # Hledání výzev podle hashtagu
+        results = graph.run("""
+            MATCH (c:Challenge)-[:TAGGED_WITH]->(h:Hashtag)
+            WHERE toLower(h.name) CONTAINS toLower($query)
+            RETURN c.title AS title, c.description AS description, h.name AS hashtag, 'hashtag_challenge' AS type
+        """, query=query).data()
+
+    return render_template("search.html", results=results)
+
 
 @app.route("/profile")
 def user_profile():
@@ -235,7 +259,17 @@ def user_profile():
         RETURN c.title AS title, c.description AS description, c.end_date AS end_date
     """, username=username).data()
     
-    # Získání splněných výzev
+@app.route("/profile/<username>")
+def users_profile(username):
+    user_info = get_logged_user_profile(graph, username)
+    
+    # Získání probíhajících a splněných výzev tohoto uživatele
+    ongoing_challenges = graph.run("""
+        MATCH (u:User {name: $username})-[:JOINED]->(c:Challenge)
+        WHERE NOT (u)-[:COMPLETED]->(c)
+        RETURN c.title AS title, c.description AS description, c.end_date AS end_date
+    """, username=username).data()
+    
     completed_challenges = graph.run("""
         MATCH (u:User {name: $username})-[r:COMPLETED]->(c:Challenge)
         RETURN c.title AS title, c.description AS description, c.end_date AS end_date, r.result AS result, r.comment AS comment
@@ -253,12 +287,28 @@ def create_challenge_route():
         title = request.form.get("title")
         description = request.form.get("description")
         duration = int(request.form.get("duration"))
-        
-        create_challenge(graph, session["username"], title, description, duration)
-        flash("Challenge created successfully!")
+        hashtags = request.form.getlist("hashtags")
+
+        # Vytvoření výzvy s vybranými hashtagy
+        create_challenge(graph, session["username"], title, description, duration, hashtags)
+        flash("Výzva byla úspěšně vytvořena!")
         return redirect(url_for("home"))
     
-    return render_template("create_challenge.html")
+    # Načtení existujících hashtagů pro zobrazení ve formuláři
+    hashtags = get_all_hashtags(graph)
+    return render_template("create_challenge.html", hashtags=hashtags)
+
+@app.route("/add_hashtag", methods=["GET", "POST"])
+def add_hashtag():
+    if request.method == "POST":
+        new_hashtag = request.form.get("new_hashtag")
+        add_hashtag(graph, new_hashtag)
+        flash("Nový hashtag byl přidán.")
+        return redirect(url_for("create_challenge_route"))
+    
+    return render_template("add_hashtag.html")
+
+
 
 @app.route("/join_challenge/<title>", methods=["POST"])
 def join_challenge_route(title):
@@ -313,6 +363,20 @@ def submit_result(title):
     
     return redirect(url_for("home"))
 
+@app.route("/challenge/<title>")
+def challenge_details(title):
+    challenge = graph.run("""
+        MATCH (c:Challenge {title: $title})
+        RETURN c.title AS title, c.description AS description, c.creator AS creator, c.end_date AS end_date
+    """, title=title).data()
+
+    # Pokud výzva existuje, zobrazí její detaily, jinak přesměruje na stránku s výzvami
+    if challenge:
+        challenge = challenge[0]  # Vezmeme první a jediný výsledek
+        return render_template("challenge_details.html", challenge=challenge)
+    else:
+        flash("Výzva nebyla nalezena.")
+        return redirect(url_for("search"))
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
