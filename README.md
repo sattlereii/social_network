@@ -12,4 +12,4 @@ přidat možnost se zapojit do výzvy a poté dát možnost ji dokončit za sebe
 zatím mě nic dalšího nenapadá :D
 
 
-tak jsem rozbila user profile - opravit musím ještě dnes
+tak jsem rozbila user profile - opravit musím ještě dnes - hotovo
