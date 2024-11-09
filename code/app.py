@@ -47,12 +47,16 @@ def create_challenge(graph, username, title, description, duration_days):
     # Přidání bodů sluníček uživateli za vytvoření výzvy
     graph.run("MATCH (u:User {name: $username}) SET u.sun_points = u.sun_points + 2", username=username)
 
-def get_all_challenges(graph):
+def get_all_challenges(graph, username):
     return graph.run("""
         MATCH (c:Challenge)
-        RETURN c.title AS title, c.description AS description, c.creator AS creator, c.end_date AS end_date
+        OPTIONAL MATCH (u:User {name: $username})-[r:JOINED]->(c)
+        OPTIONAL MATCH (u)-[cr:COMPLETED]->(c)
+        RETURN c.title AS title, c.description AS description, c.creator AS creator, c.end_date AS end_date,
+               CASE WHEN r IS NOT NULL THEN true ELSE false END AS is_joined,
+               CASE WHEN cr IS NOT NULL THEN true ELSE false END AS is_completed
         ORDER BY c.end_date DESC
-    """).data()
+    """, username=username).data()
 
 
 # Získání aktivních výzev
@@ -64,16 +68,27 @@ def get_active_challenges(graph):
     """).data()
 
 # Připojení uživatele k výzvě
-def join_challenge(graph, username, challenge_title, photo_url):
+def join_challenge(graph, username, challenge_title, result=None, comment=None):
     user_node = get_user_node(graph, username)
     challenge_node = graph.evaluate("MATCH (c:Challenge {title: $title}) RETURN c", title=challenge_title)
-    
+
     if challenge_node:
-        completed_rel = Relationship(user_node, "COMPLETED", challenge_node, photo=photo_url)
-        graph.create(completed_rel)
-        
-        # Přidání bodů ohýnku a sluníčka za splnění výzvy
-        graph.run("MATCH (u:User {name: $username}) SET u.fire_points = u.fire_points + 1, u.sun_points = u.sun_points + 1", username=username)
+        # Zkontroluje, zda uživatel již není připojen
+        existing_join = graph.evaluate("""
+            MATCH (u:User {name: $username})-[r:JOINED]->(c:Challenge {title: $title})
+            RETURN r
+        """, username=username, title=challenge_title)
+
+        # Pokud není připojen, připojí ho k výzvě a přičte body
+        if not existing_join:
+            join_rel = Relationship(user_node, "JOINED", challenge_node)
+            graph.create(join_rel)
+            
+            # Přidání bodů ohýnku a sluníčka
+            graph.run("""
+                MATCH (u:User {name: $username})
+                SET u.fire_points = u.fire_points + 1, u.sun_points = u.sun_points + 1
+            """, username=username)
 
 # Získání archivu výzev
 def get_challenge_archive(graph):
@@ -178,8 +193,9 @@ def home():
 
     logged_user = session["username"]
     logged_user_info = get_logged_user_profile(graph, logged_user)
-    challenges = get_all_challenges(graph)  # Získání všech výzev
+    challenges = get_all_challenges(graph, logged_user)  # Získání všech výzev s informací o připojení
     return render_template("home.html", profile=logged_user_info, challenges=challenges)
+
 
 
 
@@ -209,9 +225,24 @@ def user_profile():
     if "username" not in session:
         return redirect(url_for("login"))
 
-    logged_user = session["username"]
-    user_info = get_logged_user_profile(graph, logged_user)
-    return render_template("profile.html", profile=user_info)
+    username = session["username"]
+    user_info = get_logged_user_profile(graph, username)
+    
+    # Získání probíhajících výzev (připojených, ale nesplněných)
+    ongoing_challenges = graph.run("""
+        MATCH (u:User {name: $username})-[:JOINED]->(c:Challenge)
+        WHERE NOT (u)-[:COMPLETED]->(c)
+        RETURN c.title AS title, c.description AS description, c.end_date AS end_date
+    """, username=username).data()
+    
+    # Získání splněných výzev
+    completed_challenges = graph.run("""
+        MATCH (u:User {name: $username})-[r:COMPLETED]->(c:Challenge)
+        RETURN c.title AS title, c.description AS description, c.end_date AS end_date, r.result AS result, r.comment AS comment
+    """, username=username).data()
+    
+    return render_template("profile.html", profile=user_info, ongoing_challenges=ongoing_challenges, completed_challenges=completed_challenges)
+
 
 @app.route("/create_challenge", methods=["GET", "POST"])
 def create_challenge_route():
@@ -234,10 +265,13 @@ def join_challenge_route(title):
     if "username" not in session:
         return redirect(url_for("login"))
     
-    photo_url = request.form.get("photo_url")
-    join_challenge(graph, session["username"], title, photo_url)
-    flash("You joined the challenge!")
+    username = session["username"]
+    join_challenge(graph, username, title)
+    
+    flash("Připojil(a) jste se k výzvě!")
     return redirect(url_for("home"))
+
+
 
 @app.route("/matches")
 def matches():
@@ -251,6 +285,34 @@ def matches():
 def archive():
     archive_data = get_challenge_archive(graph)
     return render_template("archive.html", archive=archive_data)
+
+@app.route("/submit_result/<title>", methods=["POST"])
+def submit_result(title):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+    result = request.form.get("result")
+    comment = request.form.get("comment")
+
+    user_node = get_user_node(graph, username)
+    challenge_node = graph.evaluate("MATCH (c:Challenge {title: $title}) RETURN c", title=title)
+
+    if challenge_node:
+        # Vytvoření vztahu COMPLETED mezi uživatelem a výzvou s výsledkem a komentářem
+        completed_rel = Relationship(user_node, "COMPLETED", challenge_node, result=result, comment=comment)
+        graph.create(completed_rel)
+
+        # Přidání bodů sluníček a ohýnku za splněnou výzvu
+        graph.run("""
+            MATCH (u:User {name: $username})
+            SET u.fire_points = u.fire_points + 1, u.sun_points = u.sun_points + 1
+        """, username=username)
+
+        flash("Výsledek byl úspěšně odeslán a body byly přičteny.")
+    
+    return redirect(url_for("home"))
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
