@@ -5,7 +5,6 @@ vytvořit logo a identitu (Adam J vezmu)
 
 Poznámka - Adama J: Nechceme dát ještě jeden typ hashtagů jako profilových? Něco jako co by dokázalo identifikovat uživatele (zájmy atd.) pro lepší vyhledávání třeba. Tímto způsobem lépe vytvářet komunitu uživatelů.
 
-
 okey to zní fajn to zkusím takže na způsob té jeho seznamky, hledat lidi dle zájmu - E
 
 . přidat možnost vytvořit nový hashtag a uložit ho do databáze...uvidíme - hotovo
@@ -19,7 +18,6 @@ Adam J - Možná by bylo dobré přidat nějak systém pro badges (něco jako m�
 takže myslíš třeba odznáčky za 100 splněných výzev? atd? - E
 
 . tak jsem rozbila user profile - opravit musím ještě dnes - hotovo
-
 
 zobrazování příspěvků od nejnovějších -E
 
