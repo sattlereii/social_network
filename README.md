@@ -6,6 +6,8 @@
 
 - vytvořit logo a identitu (Adam J vezmu)
 
+- potřeba trochu změnit názvy a logiku bodů za splnění výzvy a za vytvoření výzvy
+
 - zobrazování příspěvků od nejnovějších - hotovo
 
 - spravit počítání bodů, chyba při splnění výzvy, se přičítají do obou jao sluníčka tak i ohýnky - E
