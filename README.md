@@ -8,7 +8,7 @@
 
 - zobrazování příspěvků od nejnovějších - hotovo
 
-- spravit počítání bodů - E
+- spravit počítání bodů, chyba při splnění výzvy, se přičítají do obou jao sluníčka tak i ohýnky - E
   
 - zobrazení archivnich příspěvků - E
 
