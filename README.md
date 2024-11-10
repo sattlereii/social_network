@@ -6,7 +6,7 @@
 
 - vytvořit logo a identitu (Adam J vezmu)
 
-- zobrazování příspěvků od nejnovějších -E
+- zobrazování příspěvků od nejnovějších - hotovo
 
 - zobrazení archivnich příspěvků - E
 
