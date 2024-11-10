@@ -1,4 +1,4 @@
-# Vše kde není na začítku tečka tak není hotové :D #
+# úkoly jsou rozděleny, co chceš si vem a splň #
 ### _jednou za čas to popřesouvám dolu do splněných_ ###
 
 
@@ -8,13 +8,9 @@
 
 - potřeba trochu změnit názvy a logiku bodů za splnění výzvy a za vytvoření výzvy
 
-- zobrazování příspěvků od nejnovějších - hotovo
-
 - spravit počítání bodů, chyba při splnění výzvy, se přičítají do obou jao sluníčka tak i ohýnky - E
   
 - zobrazení archivnich příspěvků - E
-
-- návštěvnost - hotovo
 
 - pravidelné výzvy od systému -E
 
@@ -31,6 +27,10 @@
     myslíš jako za splnění nějakého milníku? třeba splněných 100 výzev atd? možná by se dali udělat bonusy později za splnění techto cílů, třeba stříbrný, zlatý atd rámeček kolem profilovky, případně odznáček na      profil nebo před jméno ohledně splnění tak aby se to zobrazovalo při jeho psaní výzev třeba jako je na twitchi když máš VIP, Moderátora atd - E
 
 ## Splněné: ##
+
+_. zobrazování příspěvků od nejnovějších - hotovo_
+
+_. návštěvnost - hotovo_
 
 _. přidat možnost vytvořit nový hashtag a uložit ho do databáze...uvidíme - hotovo_
 
