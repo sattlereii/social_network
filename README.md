@@ -12,7 +12,7 @@
   
 - zobrazení archivnich příspěvků - E
 
-- návštěvnost - E
+- návštěvnost - hotovo
 
 - pravidelné výzvy od systému -E
 
