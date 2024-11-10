@@ -4,7 +4,7 @@
 
 ## Nesplněné: ##
 
-- vytvořit logo a identitu (Adam J vezmu)
+- vytvořit logo a identitu (Adam J vezmu) - jestli se ti chce tak udělat i obrázky pro jednotlivé věci ale to až do budoucna při javascriptu
 
 - potřeba trochu změnit názvy a logiku bodů za splnění výzvy a za vytvoření výzvy
 
