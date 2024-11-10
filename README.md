@@ -12,6 +12,9 @@ přidat možnost se zapojit do výzvy a poté dát možnost ji dokončit za sebe
 
 Adam J - Možná by bylo dobré přidat nějak systém pro badges (něco jako má ten github například), aby byl důvod pro ty lidi s výzvami interagovat.
 
+takže myslíš třeba odznáčky za 100 splněných výzev? atd? - E
+
+
 zatím mě nic dalšího nenapadá :D
 
 
