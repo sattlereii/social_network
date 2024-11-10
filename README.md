@@ -16,7 +16,7 @@ okey to zní fajn to zkusím takže na způsob té jeho seznamky, hledat lidi dl
 
 Adam J - Možná by bylo dobré přidat nějak systém pro badges (něco jako má ten github například), aby byl důvod pro ty lidi s výzvami interagovat. 
 
-takže myslíš třeba odznáčky za 100 splněných výzev? atd? - E
+myslíš jako za splnění nějakého milníku? třeba splněných 100 výzev atd? možná by se dali udělat bonusy později za splnění techto cílů, třeba stříbrný, zlatý atd rámeček kolem profilovky, případně odznáček na profil nebo před jméno ohledně splnění tak aby se to zobrazovalo při jeho psaní výzev třeba jako je na twitchi když máš VIP, Moderátora atd - E
 
 . tak jsem rozbila user profile - opravit musím ještě dnes - hotovo
 
