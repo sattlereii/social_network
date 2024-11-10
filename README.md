@@ -30,3 +30,5 @@ návštěvnost - E
 pravidelné výzvy od systému -E
 
 dát možnost všude přikládat foto ať už při vytváření výzev tak u splnění, profilovou atd -E
+
+udělat tu stránku matches.html, tak aby se ukázali lidi dle zájmů a mohli jsme si rozkliknout jejich profil a viděli jejich výzvy a aktivitu - E
