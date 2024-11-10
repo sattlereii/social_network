@@ -1,3 +1,6 @@
+Vše kde není na začítku tečka tak není hotové :D
+
+
 
 vytvořit logo a identitu (Adam J vezmu)
 
