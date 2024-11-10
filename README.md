@@ -13,3 +13,12 @@ zatím mě nic dalšího nenapadá :D
 
 
 tak jsem rozbila user profile - opravit musím ještě dnes - hotovo
+
+
+zobrazování příspěvků od nejnovějších -E
+
+zobrazení archivnich příspěvků - E
+
+návštěvnost - E
+
+pravidelné výzvy od systému -E
