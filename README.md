@@ -1,5 +1,5 @@
 # Vše kde není na začítku tečka tak není hotové :D #
-_### jednou za čas to popřesouvám dolu do splněných ###_
+### _jednou za čas to popřesouvám dolu do splněných_ ###
 
 
 ## Nesplněné: ##
