@@ -1,0 +1,29 @@
+{% extends "template.html" %}
+
+{% block content %}
+<h2>Upravit profil</h2>
+
+<form action="{{ url_for('update_profile') }}" method="post">
+    <div style="margin-bottom: 15px;">
+        <label for="name">Jméno:</label><br>
+        <input type="text" id="name" name="name" value="{{ profile.name }}">
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label for="password">Nové heslo:</label><br>
+        <input type="password" id="password" name="password">
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label for="age">Věk:</label><br>
+        <input type="number" id="age" name="age" value="{{ profile.age }}">
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label for="hobbies">Záliby (oddělené čárkami):</label><br>
+        <input type="text" id="hobbies" name="hobbies" value="{{ profile.hobbies | join(', ') }}">
+    </div>
+
+    <button type="submit">Uložit změny</button>
+</form>
+{% endblock %}

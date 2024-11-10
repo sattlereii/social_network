@@ -6,8 +6,14 @@
 
     <h3>Statistiky</h3>
     <ul>
-        <li>Počet lidí, se kterými se ještě můžeš seznámit: {{ num_of_available_matches }}</li>
-        <li>Počet lidí, se kterými jsi již v páru: {{ num_of_matches }}</li>
+        <li>Počet aktuálně přihlášených uživatelů: {{ current_user_count }}</li>
+        <li>Celkový počet uživatelů: {{ total_user_count }}</li>
+        <li>Celkový počet vydaných výzev: {{ total_challenge_count }}</li>
+        {% if highest_score_user %}
+            <li>Uživatel s nejvyšším počtem bodů: {{ highest_score_user.username }} ({{ highest_score_user.total_points }} bodů)</li>
+        {% else %}
+            <li>Žádný uživatel s body</li>
+        {% endif %}
     </ul>
 
     <h3>Výzvy</h3>
@@ -16,26 +22,39 @@
         {% for challenge in challenges %}
             <li>
                 <h4>{{ challenge.title }}</h4>
-                <p>{{ challenge.description }}</p>
+                <p>Datum vytvoření: {{ challenge.created_at }}</p>  <!-- Zobrazení data a času vytvoření -->
                 <p>
                     Vytvořil: 
                     <a href="{{ url_for('users_profile', username=challenge.creator) }}">
                         {{ challenge.creator }}
                     </a>
+                    {% if challenge.creator_profile_image %}
+                        <img src="{{ url_for('static', filename='uploads/' + challenge.creator_profile_image) }}" alt="Profilová fotka" style="width: 50px; height: 50px; border-radius: 50%; margin-left: 10px;">
+                    {% endif %}
                 </p>
+                <p>{{ challenge.description }}</p>
                 <p>Datum ukončení: {{ challenge.end_date }}</p>
+                
+                {% if challenge.image_filename %}
+                    <p>Obrázek výzvy:</p>
+                    <img src="{{ url_for('static', filename='uploads/' + challenge.image_filename) }}" alt="Obrázek výzvy" style="width: 200px; height: auto;">
+                {% endif %}
+
                 
                 {% if challenge.is_completed %}
                     <p><strong style="color: green;">Výzva splněna</strong></p>
                 {% elif challenge.is_joined %}
                     <p><button style="background-color: #4CAF50; color: white; border: none; padding: 10px;">Připojeno</button></p>
-                    <form action="{{ url_for('submit_result', title=challenge.title) }}" method="post" style="margin-top: 10px;">
+                    <form action="{{ url_for('submit_result', title=challenge.title) }}" method="post" enctype="multipart/form-data" style="margin-top: 10px;">
                         <label for="result">Výsledek:</label>
                         <input type="text" id="result" name="result" placeholder="Např. 40 cviků" required>
                         
                         <label for="comment">Komentář:</label>
                         <input type="text" id="comment" name="comment" placeholder="Přidejte komentář">
                         
+                        <label for="moment_image">Přidat momentku:</label>
+                        <input type="file" id="moment_image" name="moment_image" accept="image/*">
+
                         <button type="submit">Odeslat výsledek</button>
                     </form>
                 {% else %}
@@ -46,11 +65,9 @@
             </li>
         {% endfor %}
     </ul>
-{% else %}
-    <p>Momentálně nejsou žádné výzvy.</p>
-{% endif %}
-
-
+    {% else %}
+        <p>Momentálně nejsou žádné výzvy.</p>
+    {% endif %}
 
     <!-- Plovoucí tlačítko pro přidání nové výzvy -->
     <a href="{{ url_for('create_challenge_route') }}" class="floating-btn">+</a>
@@ -80,4 +97,3 @@
         }
     </style>
 {% endblock %}
-

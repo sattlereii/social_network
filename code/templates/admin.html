@@ -1,0 +1,27 @@
+<!-- templates/admin.html -->
+{% extends "template.html" %}
+
+{% block content %}
+<h2>Admin Dashboard</h2>
+
+<!-- Tlačítko pro smazání všech výzev -->
+<form action="{{ url_for('delete_all_challenges') }}" method="post">
+    <button type="submit" style="background-color: red; color: white;">Smazat všechny výzvy</button>
+</form>
+
+<hr>
+
+<!-- Tlačítko pro smazání všech bodů všem uživatelům -->
+<form action="{{ url_for('reset_all_points') }}" method="post">
+    <button type="submit" style="background-color: orange; color: white;">Smazat všem body</button>
+</form>
+
+<hr>
+
+<!-- Formulář pro smazání bodů konkrétnímu uživateli -->
+<form action="{{ url_for('reset_user_points') }}" method="post">
+    <label for="username">Uživatel:</label>
+    <input type="text" id="username" name="username" required>
+    <button type="submit" style="background-color: blue; color: white;">Smazat body konkrétnímu uživateli</button>
+</form>
+{% endblock %}

@@ -3,13 +3,25 @@ from flask import Flask, render_template, request, redirect, session, url_for, f
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from random import choice
-from random import choice
 from database import init_db, get_user_node, create_sample_data, get_matches, available_matches
-
+from datetime import datetime
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # Nastavte silný tajný klíč
 graph = Graph("bolt://neo4j:7687", auth=("neo4j", "adminpass"))
+app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
+
+# Nastavte složku pro ukládání obrázků
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Funkce na kontrolu přípustných formátů obrázků
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Funkce pro vytvoření uživatele s body sluníček a ohýnků
 def create_user(graph, username, password, age=None, hobbies=None):
@@ -44,10 +56,10 @@ def add_hashtag(graph, name):
     """, name=name)
 
 
-# Funkce pro vytvoření výzvy
-def create_challenge(graph, username, title, description, duration, hashtags):
-    end_date = datetime.now() + timedelta(days=duration)
-    challenge_node = Node("Challenge", title=title, description=description, creator=username, end_date=end_date.isoformat())
+def create_challenge(graph, username, title, description, duration, hashtags, image_filename=None):
+    created_at = datetime.now()  # Uložení aktuálního času vytvoření
+    end_date = created_at + timedelta(days=duration)
+    challenge_node = Node("Challenge", title=title, description=description, creator=username, end_date=end_date.isoformat(), created_at=created_at.isoformat())
     creator_node = get_user_node(graph, username)
     
     # Vytvoření vztahu mezi uživatelem a výzvou
@@ -71,10 +83,35 @@ def get_all_challenges(graph, username):
         OPTIONAL MATCH (u:User {name: $username})-[r:JOINED]->(c)
         OPTIONAL MATCH (u)-[cr:COMPLETED]->(c)
         RETURN c.title AS title, c.description AS description, c.creator AS creator, c.end_date AS end_date,
+               c.created_at AS created_at,
                CASE WHEN r IS NOT NULL THEN true ELSE false END AS is_joined,
                CASE WHEN cr IS NOT NULL THEN true ELSE false END AS is_completed
         ORDER BY c.end_date DESC
     """, username=username).data()
+
+def get_total_user_count(graph):
+    """Získá celkový počet uživatelů."""
+    return graph.evaluate("MATCH (u:User) RETURN count(u) AS total_users")
+
+def get_total_challenge_count(graph):
+    """Získá celkový počet výzev."""
+    return graph.evaluate("MATCH (c:Challenge) RETURN count(c) AS total_challenges")
+
+def get_highest_score_user(graph):
+    """Najde uživatele s nejvyšším počtem bodů."""
+    result = graph.run("""
+        MATCH (u:User)
+        RETURN u.name AS username, (u.sun_points + u.fire_points) AS total_points
+        ORDER BY total_points DESC
+        LIMIT 1
+    """).data()
+    return result[0] if result else None
+
+def get_current_user_count():
+    """Vrací počet aktuálně přihlášených uživatelů."""
+    # Toto je jen příklad, skutečné sledování přihlášení by vyžadovalo více logiky nebo jiné řešení.
+    # Například můžete sledovat přihlášení v reálném čase prostřednictvím session nebo specifického pole v databázi.
+    return len(session)
 
 
 # Získání aktivních výzev
@@ -125,6 +162,8 @@ def available_matches(graph, username):
 def get_user_node(graph, username):
     return graph.evaluate("MATCH (u:User {name: $username}) RETURN u", username=username)
 
+def delete_all_challenges(graph):
+    graph.run("MATCH (c:Challenge) DETACH DELETE c")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -153,6 +192,8 @@ def login():
 
         if verify_user(graph, username, password):
             session["username"] = username
+            # Nastavení role admin, pokud je přihlášen administrátor
+            session["is_admin"] = (username == "admin")
             flash("Login successful!")
             return redirect(url_for("home"))
         else:
@@ -161,9 +202,11 @@ def login():
     return render_template("login.html")
 
 
+
 @app.route("/logout", methods=["POST"])
 def logout():
     session.pop("username", None)
+    session.pop("is_admin", None)
     flash("You have been logged out.")
     return redirect(url_for("login"))
 
@@ -173,7 +216,7 @@ def update_profile():
         return redirect(url_for("login"))
 
     username = session["username"]
-    new_name = request.form.get("name")
+    new_name = request.form.get("name") or username  # Pokud není zadáno, ponecháme stávající jméno
     new_password = request.form.get("password")
     new_age = request.form.get("age")
 
@@ -195,11 +238,20 @@ def update_profile():
     """, username=username, new_name=new_name, new_age=int(new_age) if new_age else None, new_hobbies=new_hobbies)
 
     # Aktualizujte jméno v session, pokud bylo změněno
-    session["username"] = new_name
+    if new_name != username:
+        session["username"] = new_name
 
     flash("Profil byl úspěšně aktualizován.")
-    return redirect(url_for("user_profile"))
+    return redirect(url_for("user_profile", username=session["username"]))
 
+@app.route("/edit_profile")
+def edit_profile():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+    user_info = get_logged_user_profile(graph, username)
+    return render_template("edit_profile.html", profile=user_info)
 
 @app.route("/")
 @app.route("/home")
@@ -209,10 +261,23 @@ def home():
 
     logged_user = session["username"]
     logged_user_info = get_logged_user_profile(graph, logged_user)
-    challenges = get_all_challenges(graph, logged_user)  # Získání všech výzev s informací o připojení
-    return render_template("home.html", profile=logged_user_info, challenges=challenges)
-
-
+    challenges = get_all_challenges(graph, logged_user)
+    
+    # Načtení statistik
+    total_user_count = get_total_user_count(graph)
+    total_challenge_count = get_total_challenge_count(graph)
+    highest_score_user = get_highest_score_user(graph)
+    current_user_count = get_current_user_count()
+    
+    return render_template(
+        "home.html",
+        profile=logged_user_info,
+        challenges=challenges,
+        total_user_count=total_user_count,
+        total_challenge_count=total_challenge_count,
+        highest_score_user=highest_score_user,
+        current_user_count=current_user_count
+    )
 
 
 @app.route("/search", methods=["GET", "POST"])
@@ -281,24 +346,31 @@ def users_profile(username):
     
     return render_template("profile.html", profile=user_info, ongoing_challenges=ongoing_challenges, completed_challenges=completed_challenges)
 
-
 @app.route("/create_challenge", methods=["GET", "POST"])
 def create_challenge_route():
     if "username" not in session:
         return redirect(url_for("login"))
-    
+
     if request.method == "POST":
         title = request.form.get("title")
         description = request.form.get("description")
         duration = int(request.form.get("duration"))
         hashtags = request.form.getlist("hashtags")
+        
+        # Zpracování nahrání obrázku
+        file = request.files.get("image")
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            image_filename = filename
+        else:
+            image_filename = None  # Pokud žádný obrázek není nahrán nebo formát není povolen
 
-        # Vytvoření výzvy s vybranými hashtagy
-        create_challenge(graph, session["username"], title, description, duration, hashtags)
+        # Vytvoření výzvy s vybranými hashtagy a cestou k obrázku
+        create_challenge(graph, session["username"], title, description, duration, hashtags, image_filename)
         flash("Výzva byla úspěšně vytvořena!")
         return redirect(url_for("home"))
-    
-    # Načtení existujících hashtagů pro zobrazení ve formuláři
+
     hashtags = get_all_hashtags(graph)
     return render_template("create_challenge.html", hashtags=hashtags)
 
@@ -348,16 +420,20 @@ def submit_result(title):
     username = session["username"]
     result = request.form.get("result")
     comment = request.form.get("comment")
+    moment_image = request.files.get("moment_image")
+
+    image_filename = None
+    if moment_image and allowed_file(moment_image.filename):
+        image_filename = secure_filename(moment_image.filename)
+        moment_image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
 
     user_node = get_user_node(graph, username)
     challenge_node = graph.evaluate("MATCH (c:Challenge {title: $title}) RETURN c", title=title)
 
     if challenge_node:
-        # Vytvoření vztahu COMPLETED mezi uživatelem a výzvou s výsledkem a komentářem
-        completed_rel = Relationship(user_node, "COMPLETED", challenge_node, result=result, comment=comment)
+        completed_rel = Relationship(user_node, "COMPLETED", challenge_node, result=result, comment=comment, photo=image_filename)
         graph.create(completed_rel)
-
-        # Přidání bodů sluníček a ohýnku za splněnou výzvu
+        
         graph.run("""
             MATCH (u:User {name: $username})
             SET u.fire_points = u.fire_points + 1, u.sun_points = u.sun_points + 1
@@ -366,6 +442,7 @@ def submit_result(title):
         flash("Výsledek byl úspěšně odeslán a body byly přičteny.")
     
     return redirect(url_for("home"))
+
 
 @app.route("/challenge/<title>")
 def challenge_details(title):
@@ -381,6 +458,61 @@ def challenge_details(title):
     else:
         flash("Výzva nebyla nalezena.")
         return redirect(url_for("search"))
+
+@app.route("/delete_all_challenges", methods=["POST"])
+def delete_all_challenges():
+    # Code to delete all challenges
+    graph.run("MATCH (c:Challenge) DETACH DELETE c")
+    flash("All test challenges have been deleted.")
+    return redirect(url_for("admin"))
+
+@app.route("/admin")
+def admin():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    return render_template("admin.html")
+
+# Route pro smazání bodů všem uživatelům
+@app.route("/reset_all_points", methods=["POST"])
+def reset_all_points():
+    # Nastavení bodů všem uživatelům na nulu
+    graph.run("MATCH (u:User) SET u.sun_points = 0, u.fire_points = 0")
+    flash("Všem uživatelům byly smazány body.")
+    return redirect(url_for("admin"))
+
+# Route pro smazání bodů konkrétnímu uživateli
+@app.route("/reset_user_points", methods=["POST"])
+def reset_user_points():
+    username = request.form.get("username")
+    # Nastavení bodů vybranému uživateli na nulu
+    result = graph.run("MATCH (u:User {name: $username}) SET u.sun_points = 0, u.fire_points = 0 RETURN u", username=username).data()
+    if result:
+        flash(f"Body uživatele {username} byly smazány.")
+    else:
+        flash(f"Uživatel {username} nebyl nalezen.")
+    return redirect(url_for("admin"))
+
+@app.route("/upload_profile_picture", methods=["POST"])
+def upload_profile_picture():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+    profile_image = request.files.get("profile_image")
+
+    if profile_image and allowed_file(profile_image.filename):
+        image_filename = secure_filename(profile_image.filename)
+        profile_image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
+        
+        graph.run("""
+            MATCH (u:User {name: $username})
+            SET u.profile_image = $image_filename
+        """, username=username, image_filename=image_filename)
+
+        flash("Profilový obrázek byl úspěšně nahrán.")
+    
+    return redirect(url_for("user_profile"))
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
