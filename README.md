@@ -30,6 +30,8 @@
 - 
 ## Splněné: ##
 
+_. profilový obrázek - hotovo_
+
 _. zobrazování příspěvků od nejnovějších - hotovo_
 
 _. návštěvnost - hotovo_
