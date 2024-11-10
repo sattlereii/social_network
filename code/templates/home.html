@@ -5,16 +5,22 @@
     <p>Zapaluj, nech se zapalovat a nalezni si zde svou drahou polovičku se kterou budete hořet.</p>
 
     <h3>Statistiky</h3>
-    <ul>
-        <li>Počet aktuálně přihlášených uživatelů: {{ current_user_count }}</li>
-        <li>Celkový počet uživatelů: {{ total_user_count }}</li>
-        <li>Celkový počet vydaných výzev: {{ total_challenge_count }}</li>
-        {% if highest_score_user %}
-            <li>Uživatel s nejvyšším počtem bodů: {{ highest_score_user.username }} ({{ highest_score_user.total_points }} bodů)</li>
-        {% else %}
-            <li>Žádný uživatel s body</li>
-        {% endif %}
-    </ul>
+<ul>
+    <li>Počet aktuálně přihlášených uživatelů: {{ current_user_count }}</li>
+    <li>Celkový počet uživatelů: {{ total_user_count }}</li>
+    <li>Celkový počet vydaných výzev: {{ total_challenge_count }}</li>
+    {% if highest_score_user %}
+        <li>
+            Uživatel s nejvyšším počtem bodů: 
+            <a href="{{ url_for('users_profile', username=highest_score_user.username) }}">
+                {{ highest_score_user.username }}
+            </a> 
+            ({{ highest_score_user.total_points }} bodů)
+        </li>
+    {% else %}
+        <li>Žádný uživatel s body</li>
+    {% endif %}
+</ul>
 
     <h3>Výzvy</h3>
     {% if challenges %}

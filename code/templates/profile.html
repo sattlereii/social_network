@@ -3,11 +3,9 @@
 {% block content %}
 <h2>Profil uživatele {{ profile.name }}</h2>
 
-<form action="{{ url_for('upload_profile_picture') }}" method="post" enctype="multipart/form-data" style="margin-top: 20px;">
-    <label for="profile_image">Nahrát profilovou fotku:</label>
-    <input type="file" id="profile_image" name="profile_image" accept="image/*">
-    <button type="submit">Nahrát</button>
-</form>
+{% if profile.profile_image %}
+    <img src="{{ url_for('static', filename='uploads/' ~ profile.profile_image) }}" alt="Profilová fotka" style="width: 100px; height: 100px; border-radius: 50%; float: right;">
+{% endif %}
 
 <ul>
     <li>Věk: {{ profile.age }}</li>
@@ -26,15 +24,10 @@
     <li>Body ohýnku: {{ profile.fire_points }}</li>
 </ul>
 
-{% if profile.profile_image %}
-    <img src="{{ url_for('static', filename='uploads/' ~ profile.profile_image) }}" alt="Profilová fotka" style="width: 100px; height: 100px; float: right;">
-{% endif %}
-
 <!-- Odkaz na úpravu profilu -->
 {% if session.get("username") == profile.name %}
     <a href="{{ url_for('edit_profile') }}" class="btn btn-primary" style="margin-top: 20px;">Upravit profil</a>
 {% endif %}
-
 
 <!-- Tlačítko pro odhlášení -->
 {% if session.get("username") == profile.name %}
@@ -45,7 +38,6 @@
 
 <h3>Probíhající výzvy</h3>
 {% if ongoing_challenges %}
-
 <ul>
     {% for challenge in ongoing_challenges %}
         <li>
@@ -57,10 +49,8 @@
     <p>Momentálně se neúčastníte žádných výzev.</p>
 {% endif %}
 
-
 <h3>Splněné výzvy</h3>
 {% if completed_challenges %}
-
 <ul>
     {% for challenge in completed_challenges %}
         <li>
@@ -74,8 +64,7 @@
     <p>Nemáte žádné splněné výzvy.</p>
 {% endif %}
 
-{% if session.get("is_admin") %}
+{% if session.get("username") == "admin" and profile.name == "admin" %}
     <a href="{{ url_for('admin') }}" class="btn btn-primary" style="margin-top: 20px;">Přejít na Admin stránku</a>
 {% endif %}
 {% endblock %}
-

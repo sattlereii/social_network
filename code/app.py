@@ -1,11 +1,10 @@
+import os
 from py2neo import Graph, Node, Relationship
 from flask import Flask, render_template, request, redirect, session, url_for, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from random import choice
 from database import init_db, get_user_node, create_sample_data, get_matches, available_matches
-from datetime import datetime
-import os
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -38,12 +37,14 @@ def verify_user(graph, username, password):
 
 # Získání profilu přihlášeného uživatele
 def get_logged_user_profile(graph, username):
-    result = graph.run(f"""
-        MATCH (user:User)
-        WHERE user.name = '{username}'
-        RETURN user.name AS name, user.age AS age, user.hobbies AS hobbies, user.sun_points AS sun_points, user.fire_points AS fire_points
-    """).data()
+    result = graph.run("""
+        MATCH (user:User {name: $username})
+        RETURN user.name AS name, user.age AS age, user.hobbies AS hobbies,
+               user.sun_points AS sun_points, user.fire_points AS fire_points,
+               user.profile_image AS profile_image
+    """, username=username).data()
     return result[0] if result else {}
+
 
 def get_all_hashtags(graph):
     """Načte všechny hashtagy z databáze."""
@@ -216,15 +217,27 @@ def update_profile():
         return redirect(url_for("login"))
 
     username = session["username"]
-    new_name = request.form.get("name") or username  # Pokud není zadáno, ponecháme stávající jméno
+    new_name = request.form.get("name")
     new_password = request.form.get("password")
     new_age = request.form.get("age")
-
-    # Získáme hodnotu hobbies, pokud není zadána, nastavíme prázdný seznam
     hobbies_input = request.form.get("hobbies")
     new_hobbies = hobbies_input.split(",") if hobbies_input else []
 
-    # Aktualizace uživatelských údajů v databázi
+    # Zpracování nahrání profilového obrázku
+    file = request.files.get("profile_image")
+    if file and allowed_file(file.filename):
+        filename = secure_filename(f"{username}_profile_{file.filename}")
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        profile_image_filename = filename
+        # Uložíme cestu k obrázku do databáze
+        graph.run("""
+            MATCH (u:User {name: $username})
+            SET u.profile_image = $profile_image
+        """, username=username, profile_image=profile_image_filename)
+    else:
+        profile_image_filename = None
+
+    # Aktualizace ostatních údajů
     if new_password:
         password_hash = generate_password_hash(new_password)
         graph.run("""
@@ -237,12 +250,9 @@ def update_profile():
         SET u.name = $new_name, u.age = $new_age, u.hobbies = $new_hobbies
     """, username=username, new_name=new_name, new_age=int(new_age) if new_age else None, new_hobbies=new_hobbies)
 
-    # Aktualizujte jméno v session, pokud bylo změněno
-    if new_name != username:
-        session["username"] = new_name
-
+    session["username"] = new_name
     flash("Profil byl úspěšně aktualizován.")
-    return redirect(url_for("user_profile", username=session["username"]))
+    return redirect(url_for("user_profile"))
 
 @app.route("/edit_profile")
 def edit_profile():
@@ -497,21 +507,22 @@ def upload_profile_picture():
     if "username" not in session:
         return redirect(url_for("login"))
 
-    username = session["username"]
-    profile_image = request.files.get("profile_image")
+    file = request.files.get("profile_image")
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-    if profile_image and allowed_file(profile_image.filename):
-        image_filename = secure_filename(profile_image.filename)
-        profile_image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
-        
+        # Aktualizace profilu s novou profilovou fotkou
         graph.run("""
             MATCH (u:User {name: $username})
-            SET u.profile_image = $image_filename
-        """, username=username, image_filename=image_filename)
+            SET u.profile_image = $filename
+        """, username=session["username"], filename=filename)
+        
+        flash("Profilová fotka byla úspěšně nahrána.")
+    else:
+        flash("Nepodařilo se nahrát profilovou fotku.")
 
-        flash("Profilový obrázek byl úspěšně nahrán.")
-    
-    return redirect(url_for("user_profile"))
+    return redirect(url_for("edit_profile"))
 
 
 if __name__ == "__main__":
