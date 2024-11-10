@@ -18,7 +18,7 @@
 
 - pravidelné výzvy od systému -E
 
-- dát možnost všude přikládat foto ať už při vytváření výzev tak u splnění, profilovou atd -rvu se s tím ale zatím nejde
+- dát možnost všude přikládat foto ať už při vytváření výzev tak u splnění, profilovou atd - asi na to zatím kašlu, pushnu to a uvidím Jakš e s tím v budoucnu vypořádám
 
 - Poznámka - Adama J: Nechceme dát ještě jeden typ hashtagů jako profilových? Něco jako co by dokázalo identifikovat uživatele (zájmy atd.) pro lepší vyhledávání třeba. Tímto způsobem lépe vytvářet komunitu uživatelů.
 
