@@ -8,6 +8,8 @@
 
 - zobrazování příspěvků od nejnovějších - hotovo
 
+- spravit počítání bodů - E
+  
 - zobrazení archivnich příspěvků - E
 
 - návštěvnost - E
