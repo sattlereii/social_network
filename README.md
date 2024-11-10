@@ -2,7 +2,10 @@
 vytvořit logo a identitu (Adam J vezmu)
 
 výzvy již jdou, jen upravit aby se tam davali hashtagy z nějakého seznamu a upravit hledání dle hashtagů - hotovo
+
 Poznámka - Adama J: Nechceme dát ještě jeden typ hashtagů jako profilových? Něco jako co by dokázalo identifikovat uživatele (zájmy atd.) pro lepší vyhledávání třeba. Tímto způsobem lépe vytvářet komunitu uživatelů.
+
+okey to zní fajn to zkusím takže na způsob té jeho seznamky, hledat lidi dle zájmu - E
 
 + přidat možnost vytvořit nový hashtag a uložit ho do databáze...uvidíme - hotovo
 
