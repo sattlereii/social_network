@@ -5,10 +5,6 @@
 ## Nesplněné: ##
 
 - vytvořit logo a identitu (Adam J vezmu) - jestli se ti chce tak udělat i obrázky pro jednotlivé věci ale to až do budoucna při javascriptu
-
-- potřeba trochu změnit názvy a logiku bodů za splnění výzvy a za vytvoření výzvy - udělala bych jen jeden předmet bodů které by se sbérali, můžem třeba čínky - E
-
-- spravit počítání bodů, chyba při splnění výzvy, se přičítají do obou jao sluníčka tak i ohýnky - E
   
 - zobrazení archivnich příspěvků - E
 
@@ -46,3 +42,6 @@ _. tak jsem rozbila user profile - opravit musím ještě dnes - hotovo_
 
 _. výzvy již jdou, jen upravit aby se tam davali hashtagy z nějakého seznamu a upravit hledání dle hashtagů - hotovo_
 
+_. potřeba trochu změnit názvy a logiku bodů za splnění výzvy a za vytvoření výzvy - udělala bych jen jeden předmet bodů které by se sbérali, můžem třeba čínky - hotovo_
+
+_. spravit počítání bodů, chyba při splnění výzvy, se přičítají do obou jao sluníčka tak i ohýnky - hotovo_
