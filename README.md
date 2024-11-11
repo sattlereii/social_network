@@ -6,7 +6,7 @@
 
 - vytvořit logo a identitu (Adam J vezmu) - jestli se ti chce tak udělat i obrázky pro jednotlivé věci ale to až do budoucna při javascriptu
 
-- potřeba trochu změnit názvy a logiku bodů za splnění výzvy a za vytvoření výzvy
+- potřeba trochu změnit názvy a logiku bodů za splnění výzvy a za vytvoření výzvy - udělala bych jen jeden předmet bodů které by se sbérali, můžem třeba čínky - E
 
 - spravit počítání bodů, chyba při splnění výzvy, se přičítají do obou jao sluníčka tak i ohýnky - E
   
