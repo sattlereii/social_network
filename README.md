@@ -18,7 +18,7 @@
 
 - Poznámka - Adama J: Nechceme dát ještě jeden typ hashtagů jako profilových? Něco jako co by dokázalo identifikovat uživatele (zájmy atd.) pro lepší vyhledávání třeba. Tímto způsobem lépe vytvářet komunitu uživatelů.
 
-    okey to zní fajn to zkusím takže na způsob té jeho seznamky, hledat lidi dle zájmu - E
+    okey to zní fajn to zkusím takže na způsob té jeho seznamky, hledat lidi dle zájmu - vrhnu se na to dnes asi E
 
 - udělat tu stránku matches.html, tak aby se ukázali lidi dle zájmů a mohli jsme si rozkliknout jejich profil a viděli jejich výzvy a aktivitu - E
 
