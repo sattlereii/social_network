@@ -10,10 +10,6 @@
 
 - pravidelné výzvy od systému -E
 
-- Poznámka - Adama J: Nechceme dát ještě jeden typ hashtagů jako profilových? Něco jako co by dokázalo identifikovat uživatele (zájmy atd.) pro lepší vyhledávání třeba. Tímto způsobem lépe vytvářet komunitu uživatelů.
-
-    okey to zní fajn to zkusím takže na způsob té jeho seznamky, hledat lidi dle zájmu - vrhnu se na to dnes asi E
-
 - udělat tu stránku matches.html, tak aby se ukázali lidi dle zájmů a mohli jsme si rozkliknout jejich profil a viděli jejich výzvy a aktivitu - E
 
 - Adam J - Možná by bylo dobré přidat nějak systém pro badges (něco jako má ten github například), aby byl důvod pro ty lidi s výzvami interagovat. 
@@ -45,3 +41,7 @@ _. výzvy již jdou, jen upravit aby se tam davali hashtagy z nějakého seznamu
 _. potřeba trochu změnit názvy a logiku bodů za splnění výzvy a za vytvoření výzvy - udělala bych jen jeden předmet bodů které by se sbérali, můžem třeba čínky - hotovo_
 
 _. spravit počítání bodů, chyba při splnění výzvy, se přičítají do obou jao sluníčka tak i ohýnky - hotovo_
+
+_. Poznámka - Adama J: Nechceme dát ještě jeden typ hashtagů jako profilových? Něco jako co by dokázalo identifikovat uživatele (zájmy atd.) pro lepší vyhledávání třeba. Tímto způsobem lépe vytvářet komunitu uživatelů. - Hotovo_
+
+_.okey to zní fajn to zkusím takže na způsob té jeho seznamky, hledat lidi dle zájmu - vrhnu se na to dnes asi - hotovo_
