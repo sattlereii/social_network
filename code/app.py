@@ -23,9 +23,9 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Funkce pro vytvoření uživatele s body sluníček a ohýnků
-def create_user(graph, username, password, age=None, hobbies=None):
+def create_user(graph, username, password, age=None):
     password_hash = generate_password_hash(password)
-    user_node = Node("User", name=username, password=password_hash, sun_points=0, fire_points=0, age=age, hobbies=hobbies)
+    user_node = Node("User", name=username, password=password_hash, sun_points=0, fire_points=0, age=age)
     graph.create(user_node)
 
 # Funkce pro ověření uživatele při přihlášení
@@ -35,22 +35,32 @@ def verify_user(graph, username, password):
         return True
     return False
 
+def get_all_interests(graph):
+    return graph.run("MATCH (i:Interest) RETURN i.name AS name").data()
+
+
+def add_interest(graph, name):
+    """Přidá nový zájem do databáze, pokud ještě neexistuje."""
+    graph.run("""
+        MERGE (i:Interest {name: $name})
+    """, name=name)
+
 # Získání profilu přihlášeného uživatele
 def get_logged_user_profile(graph, username):
     result = graph.run("""
         MATCH (user:User {name: $username})
-        RETURN user.name AS name, user.age AS age, user.hobbies AS hobbies,
-               user.sun_points AS sun_points, user.fire_points AS fire_points,
-               user.profile_image AS profile_image
+        RETURN user.name AS name, user.age AS age, user.interests AS interests, 
+               user.sun_points AS sun_points, user.fire_points AS fire_points, user.profile_image AS profile_image
     """, username=username).data()
     return result[0] if result else {}
 
 
+
 def get_all_hashtags(graph):
-    """Načte všechny hashtagy z databáze."""
     return graph.run("MATCH (h:Hashtag) RETURN h.name AS name").data()
 
-def add_hashtag(graph, name):
+
+def add_hashtag_to_db(graph, name):
     """Přidá nový hashtag do databáze, pokud ještě neexistuje."""
     graph.run("""
         MERGE (h:Hashtag {name: $name})
@@ -89,6 +99,20 @@ def get_all_challenges(graph, username):
                CASE WHEN cr IS NOT NULL THEN true ELSE false END AS is_completed
         ORDER BY c.end_date DESC
     """, username=username).data()
+
+def get_all_challenges_with_hashtags(graph):
+    # Předpokládám, že challenge a hashtag jsou propojeny vztahem TAGGED_WITH
+    query = """
+    MATCH (c:Challenge)-[:TAGGED_WITH]->(h:Hashtag)
+    RETURN c.title AS title, c.description AS description, c.created_at AS created_at,
+           c.end_date AS end_date, c.creator AS creator, c.image_filename AS image_filename,
+           c.is_completed AS is_completed, c.is_joined AS is_joined, 
+           collect(h.name) AS hashtags
+    """
+    result = graph.run(query).data()
+    
+    # Předání výsledku jako seznam slovníků pro Flask šablonu
+    return result
 
 def get_total_user_count(graph):
     """Získá celkový počet uživatelů."""
@@ -156,7 +180,7 @@ def available_matches(graph, username):
         WHERE NOT (user)-[:LIKES]->(friend)
           AND NOT (friend)-[:DISLIKES]->(user)
           AND user.name <> friend.name
-        RETURN friend.name AS name, friend.age AS age, friend.hobbies AS hobbies
+        RETURN friend.name AS name, friend.age AS age
     """).data()
 
 # Získání uzlu uživatele podle jména
@@ -171,19 +195,37 @@ def register():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        age = int(request.form.get("age"))
-        hobbies = request.form.get("hobbies").split(",")  # Rozdělte koníčky podle čárek
+        age = int(request.form.get("age")) if request.form.get("age") else None
+        selected_interests = request.form.getlist("interests")  # Získá vybrané zájmy jako seznam
 
-        existing_user = graph.evaluate("MATCH (user:User {name: $username}) RETURN user", username=username)
-        if existing_user:
-            flash("Username already exists!")
-            return redirect(url_for("register"))
+        # Zpracování nahrání profilového obrázku
+        file = request.files.get("profile_image")
+        if file and allowed_file(file.filename):
+            filename = secure_filename(f"{username}_profile_{file.filename}")
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            profile_image_filename = filename
+        else:
+            profile_image_filename = None
 
-        create_user(graph, username, password, age, hobbies)
-        flash("Registration successful! Please log in.")
+        # Vytvoření nového uživatele v databázi
+        password_hash = generate_password_hash(password)
+        graph.run("""
+            CREATE (u:User {
+                name: $username, 
+                password: $password_hash, 
+                age: $age, 
+                interests: $interests,
+                profile_image: $profile_image
+            })
+        """, username=username, password_hash=password_hash, age=age, interests=selected_interests, profile_image=profile_image_filename)
+
+        flash("Registrace byla úspěšná! Přihlašte se prosím.")
         return redirect(url_for("login"))
-    
-    return render_template("register.html")
+
+    # Načítání zájmů pro zobrazení v šabloně
+    interests = graph.run("MATCH (i:Interest) RETURN i.name AS name").data()
+    return render_template("register.html", interests=interests)
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -220,8 +262,9 @@ def update_profile():
     new_name = request.form.get("name")
     new_password = request.form.get("password")
     new_age = request.form.get("age")
-    hobbies_input = request.form.get("hobbies")
-    new_hobbies = hobbies_input.split(",") if hobbies_input else []
+    selected_interests = request.form.getlist("interests")  # Získá vybrané zájmy jako seznam
+
+    print("Selected interests:", selected_interests)  # Kontrolní výpis pro ladění
 
     # Zpracování nahrání profilového obrázku
     file = request.files.get("profile_image")
@@ -237,7 +280,7 @@ def update_profile():
     else:
         profile_image_filename = None
 
-    # Aktualizace ostatních údajů
+    # Aktualizace hesla, pokud bylo zadáno
     if new_password:
         password_hash = generate_password_hash(new_password)
         graph.run("""
@@ -245,23 +288,28 @@ def update_profile():
             SET u.password = $password_hash
         """, username=username, password_hash=password_hash)
 
+    # Aktualizace ostatních údajů včetně zájmů
     graph.run("""
         MATCH (u:User {name: $username})
-        SET u.name = $new_name, u.age = $new_age, u.hobbies = $new_hobbies
-    """, username=username, new_name=new_name, new_age=int(new_age) if new_age else None, new_hobbies=new_hobbies)
+        SET u.name = $new_name, u.age = $new_age, u.interests = $selected_interests
+    """, username=username, new_name=new_name, new_age=int(new_age) if new_age else None, selected_interests=selected_interests)
 
+    # Aktualizace jména v session, pokud bylo změněno
     session["username"] = new_name
     flash("Profil byl úspěšně aktualizován.")
     return redirect(url_for("user_profile"))
 
 @app.route("/edit_profile")
 def edit_profile():
-    if "username" not in session:
+    username = session.get("username")
+    if not username:
         return redirect(url_for("login"))
 
-    username = session["username"]
     user_info = get_logged_user_profile(graph, username)
-    return render_template("edit_profile.html", profile=user_info)
+    interests = get_all_interests(graph)  # Načíst zájmy z databáze
+    
+    return render_template("edit_profile.html", profile=user_info, interests=interests)
+
 
 @app.route("/")
 @app.route("/home")
@@ -278,6 +326,8 @@ def home():
     total_challenge_count = get_total_challenge_count(graph)
     highest_score_user = get_highest_score_user(graph)
     current_user_count = get_current_user_count()
+    challenges = get_all_challenges_with_hashtags(graph)
+    
     
     return render_template(
         "home.html",
@@ -367,32 +417,31 @@ def create_challenge_route():
         duration = int(request.form.get("duration"))
         hashtags = request.form.getlist("hashtags")
         
-        # Zpracování nahrání obrázku
         file = request.files.get("image")
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             image_filename = filename
         else:
-            image_filename = None  # Pokud žádný obrázek není nahrán nebo formát není povolen
+            image_filename = None
 
-        # Vytvoření výzvy s vybranými hashtagy a cestou k obrázku
         create_challenge(graph, session["username"], title, description, duration, hashtags, image_filename)
         flash("Výzva byla úspěšně vytvořena!")
         return redirect(url_for("home"))
 
-    hashtags = get_all_hashtags(graph)
+    hashtags = get_all_hashtags(graph)  # Toto musí být na správném místě
+    print("Loaded hashtags:", hashtags)  # Ověření načtených hashtagů
     return render_template("create_challenge.html", hashtags=hashtags)
 
 @app.route("/add_hashtag", methods=["GET", "POST"])
 def add_hashtag():
     if request.method == "POST":
         new_hashtag = request.form.get("new_hashtag")
-        add_hashtag(graph, new_hashtag)
-        flash("Nový hashtag byl přidán.")
+        add_hashtag_to_db(graph, new_hashtag)
+        flash("Hashtag byl úspěšně přidán.")
         return redirect(url_for("create_challenge_route"))
-    
     return render_template("add_hashtag.html")
+
 
 
 
@@ -524,6 +573,13 @@ def upload_profile_picture():
 
     return redirect(url_for("edit_profile"))
 
+@app.route("/add_interest", methods=["POST"])
+def add_interest_route():
+    new_interest = request.form.get("new_interest")
+    if new_interest:
+        add_interest(graph, new_interest)
+        flash("Nový zájem byl úspěšně přidán.")
+    return redirect(url_for("edit_profile"))
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

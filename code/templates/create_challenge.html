@@ -2,13 +2,19 @@
 
 {% block content %}
 <h2>Vytvořit novou výzvu</h2>
-
+<h3>Debug: Zobrazení načtených hashtagů</h3>
+<ul>
+    {% for hashtag in hashtags %}
+        <li>{{ hashtag['name'] }}</li>
+    {% endfor %}
+</ul>
 <form action="{{ url_for('create_challenge_route') }}" method="post">
     <div style="margin-bottom: 15px;">
         <label for="title">Název výzvy:</label><br>
         <input type="text" id="title" name="title" required>
     </div>
 
+    
     <div style="margin-bottom: 15px;">
         <label for="description">Popis výzvy:</label><br>
         <textarea id="description" name="description" required></textarea>
@@ -21,12 +27,15 @@
 
     <div style="margin-bottom: 15px;">
         <label for="hashtags">Vyberte hashtagy:</label><br>
-        <select id="hashtags" name="hashtags" multiple style="width: 100%;">
+        <select id="hashtags" name="hashtags" multiple class="select2" style="width: 100%;">
             {% for hashtag in hashtags %}
-                <option value="{{ hashtag.name }}">{{ hashtag.name }}</option>
+                <option value="{{ hashtag['name'] }}">{{ hashtag['name'] }}</option>
             {% endfor %}
         </select>
     </div>
+    
+    
+    
 
     <div style="margin-bottom: 15px;">
         <a href="{{ url_for('add_hashtag') }}">Přidat nový hashtag</a>
@@ -39,13 +48,5 @@
     <button type="submit">Vytvořit výzvu</button>
 </form>
 
-<script>
-    $(document).ready(function() {
-        $('#hashtags').select2({
-            placeholder: "Vyberte nebo hledejte hashtagy",
-            allowClear: true
-        });
-    });
-</script>
 {% endblock %}
 

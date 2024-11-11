@@ -9,20 +9,22 @@
 
 <ul>
     <li>Věk: {{ profile.age }}</li>
-    <li>Záliby:
+    <li>Zájmy:
         <ul>
-            {% if profile.hobbies %}
-                {% for hobby in profile.hobbies %}
-                    <li>{{ hobby }}</li>
+            {% if profile.interests %}
+                {% for interest in profile.interests %}
+                    <li>{{ interest }}</li>
                 {% endfor %}
             {% else %}
-                <li>Žádné záliby</li>
+                <li>Žádné zájmy</li>
             {% endif %}
         </ul>
     </li>
     <li>Body sluníček: {{ profile.sun_points }}</li>
     <li>Body ohýnku: {{ profile.fire_points }}</li>
 </ul>
+
+
 
 <!-- Odkaz na úpravu profilu -->
 {% if session.get("username") == profile.name %}
