@@ -1,28 +1,29 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h2>Shody</h2>
-{% if profiles %}
-    {% for profile in profiles %}
-        <article class="card" style="width: 18rem;">
-            <!-- <img src="..." class="card-img-top" alt="..."> -->
-            <section class="card-body">
-            <h3 class="card-title">{{ profile.get("friend.name") }}</h5>
-            <ul class="card-text">
-                <li>Věk: {{ profile.get("friend.age") }}</li>
-                <li>Záliby:
-                    <ul>
-                    {% for hobby in profile.get("friend.hobbies") %}
-                        <li>{{ hobby }}</li>
-                    {% endfor %}
-                    </ul>
-                </li>
-            </ul>
-            </section>
-        </article>
-    {% endfor %}
-{% else %}
-    <p>Bohužel nemáte žádné shody.</p>
-{% endif %}
+<h2>Shody podle zájmů</h2>
 
+<h3>Vaše zájmy:</h3>
+<ul>
+    {% for interest in user_interests %}
+        <li>{{ interest }}</li>
+    {% endfor %}
+</ul>
+
+<h3>Uživatelé se stejnými zájmy:</h3>
+{% if matches %}
+    <ul>
+        {% for match in matches %}
+            <li>
+                <a href="{{ url_for('users_profile', username=match.name) }}">{{ match.name }}</a>
+                <br>
+                Sdílené zájmy: {{ match.shared_interests | join(', ') }}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Nebyly nalezeny žádné shody podle zájmů.</p>
+{% endif %}
 {% endblock %}
+
+

@@ -25,7 +25,7 @@ def allowed_file(filename):
 # Funkce pro vytvoření uživatele s body sluníček a ohýnků
 def create_user(graph, username, password, age=None):
     password_hash = generate_password_hash(password)
-    user_node = Node("User", name=username, password=password_hash, sun_points=0, fire_points=0, age=age)
+    user_node = Node("User", name=username, password=password_hash, sun_points=0, age=age)
     graph.create(user_node)
 
 # Funkce pro ověření uživatele při přihlášení
@@ -50,10 +50,27 @@ def get_logged_user_profile(graph, username):
     result = graph.run("""
         MATCH (user:User {name: $username})
         RETURN user.name AS name, user.age AS age, user.interests AS interests, 
-               user.sun_points AS sun_points, user.fire_points AS fire_points, user.profile_image AS profile_image
+               user.sun_points AS sun_points, user.profile_image AS profile_image
     """, username=username).data()
     return result[0] if result else {}
 
+def universal_search(graph, query):
+    query = query.lower()
+    return graph.run("""
+        // Vyhledávání v uživatelích podle jména nebo zájmů
+        MATCH (u:User)
+        WHERE toLower(u.name) CONTAINS $query
+           OR any(interest IN u.interests WHERE toLower(interest) CONTAINS $query)
+        RETURN u.name AS name, 'user' AS type
+        UNION
+        // Vyhledávání ve výzvách podle názvu, popisku nebo hashtagů
+        MATCH (c:Challenge)
+        OPTIONAL MATCH (c)-[:TAGGED_WITH]->(h:Hashtag)
+        WHERE toLower(c.title) CONTAINS $query
+           OR toLower(c.description) CONTAINS $query
+           OR toLower(h.name) CONTAINS $query
+        RETURN c.title AS name, 'challenge' AS type
+    """, query=query).data()
 
 
 def get_all_hashtags(graph):
@@ -128,7 +145,7 @@ def get_highest_score_user(graph):
     """Najde uživatele s nejvyšším počtem bodů."""
     result = graph.run("""
         MATCH (u:User)
-        RETURN u.name AS username, (u.sun_points + u.fire_points) AS total_points
+        RETURN u.name AS username, (u.sun_points) AS total_points
         ORDER BY total_points DESC
         LIMIT 1
     """).data()
@@ -315,7 +332,6 @@ def edit_profile():
     
     return render_template("edit_profile.html", profile=user_info, interests=interests)
 
-
 @app.route("/")
 @app.route("/home")
 def home():
@@ -344,31 +360,15 @@ def home():
         current_user_count=current_user_count
     )
 
-
 @app.route("/search", methods=["GET", "POST"])
 def search():
     query = request.args.get("query", "")
-    search_type = request.args.get("search_type", "users")
-    results = []
-
-    if search_type == "users":
-        # Hledání uživatelů s podobným jménem
-        results = graph.run("""
-            MATCH (u:User)
-            WHERE toLower(u.name) CONTAINS toLower($query)
-            RETURN u.name AS name, 'user' AS type
-        """, query=query).data()
-
-    elif search_type == "challenges":
-        # Hledání výzev s podobným názvem nebo popisem
-        results = graph.run("""
-            MATCH (c:Challenge)
-            WHERE toLower(c.title) CONTAINS toLower($query) OR toLower(c.description) CONTAINS toLower($query)
-            RETURN c.title AS title, c.description AS description, 'challenge' AS type
-        """, query=query).data()
-
-    return render_template("search.html", results=results)
-
+    if query:
+        results = universal_search(graph, query)
+        return render_template("search.html", results=results, query=query)
+    else:
+        # I když je dotaz prázdný, zobrazí stránku search.html s informací, že nebyly nalezeny žádné výsledky
+        return render_template("search.html", results=[], query=query)
 
 @app.route("/profile")
 def user_profile():
@@ -452,8 +452,28 @@ def matches():
     if "username" not in session:
         return redirect(url_for("login"))
 
-    user_matches = get_matches(graph, session["username"])
-    return render_template("matches.html", profiles=user_matches)
+    username = session["username"]
+
+    # Získání zájmů aktuálně přihlášeného uživatele
+    user_interests = graph.run("""
+    MATCH (u:User), (i:Interest)
+    WHERE i.name IN u.interests
+    MERGE (u)-[:INTERESTED_IN]->(i)
+""")
+
+
+    # Najdeme uživatele s podobnými zájmy
+    matches = graph.run("""
+    MATCH (u:User {name: $username})-[:INTERESTED_IN]->(interest:Interest)<-[:INTERESTED_IN]-(match:User)
+    WHERE u.name <> match.name
+    RETURN match.name AS name, collect(interest.name) AS shared_interests
+""", username=username).data()
+
+
+    # Předáme data šabloně
+    return render_template("matches.html", user_interests=user_interests, matches=matches)
+
+
 
 @app.route("/archive")
 def archive():
@@ -484,7 +504,7 @@ def submit_result(title):
         
         graph.run("""
             MATCH (u:User {name: $username})
-            SET u.fire_points = u.fire_points + 1, u.sun_points = u.sun_points + 1
+            SET u.sun_points = u.sun_points + 1
         """, username=username)
 
         flash("Výsledek byl úspěšně odeslán a body byly přičteny.")
@@ -524,7 +544,7 @@ def admin():
 @app.route("/reset_all_points", methods=["POST"])
 def reset_all_points():
     # Nastavení bodů všem uživatelům na nulu
-    graph.run("MATCH (u:User) SET u.sun_points = 0, u.fire_points = 0")
+    graph.run("MATCH (u:User) SET u.sun_points = 0")
     flash("Všem uživatelům byly smazány body.")
     return redirect(url_for("admin"))
 
@@ -533,7 +553,7 @@ def reset_all_points():
 def reset_user_points():
     username = request.form.get("username")
     # Nastavení bodů vybranému uživateli na nulu
-    result = graph.run("MATCH (u:User {name: $username}) SET u.sun_points = 0, u.fire_points = 0 RETURN u", username=username).data()
+    result = graph.run("MATCH (u:User {name: $username}) SET u.sun_points = 0 RETURN u", username=username).data()
     if result:
         flash(f"Body uživatele {username} byly smazány.")
     else:

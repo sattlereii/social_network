@@ -3,33 +3,24 @@
 {% block content %}
 <h2>Vyhledávání</h2>
 <form action="{{ url_for('search') }}" method="get">
-    <input type="text" name="query" placeholder="Hledat uživatele, výzvy nebo hashtagy" required>
-    <select name="search_type">
-        <option value="users">Uživatelé</option>
-        <option value="challenges_title">Výzvy podle názvu</option>
-        <option value="challenges_hashtag">Výzvy podle hashtagu</option>
-    </select>
+    <input type="text" name="query" placeholder="Zadejte hledaný výraz">
     <button type="submit">Hledat</button>
 </form>
 
+
 {% if results %}
-    <h3>Výsledky hledání:</h3>
     <ul>
         {% for result in results %}
             <li>
                 {% if result.type == 'user' %}
-                    <a href="{{ url_for('users_profile', username=result.name) }}">{{ result.name }}</a>
+                    <a href="{{ url_for('users_profile', username=result.name) }}">{{ result.name }}</a> (Uživatel)
                 {% elif result.type == 'challenge' %}
-                    <a href="{{ url_for('challenge_details', title=result.title) }}">
-                        <strong>{{ result.title }}</strong>
-                    </a>: {{ result.description }}
-                {% elif result.type == 'hashtag_challenge' %}
-                    <a href="{{ url_for('challenge_details', title=result.title) }}">
-                        <strong>{{ result.title }}</strong>
-                    </a> (hashtag: {{ result.hashtag }})
+                    <a href="{{ url_for('challenge_details', title=result.name) }}">{{ result.name }}</a> (Výzva)
                 {% endif %}
             </li>
         {% endfor %}
     </ul>
+{% else %}
+    <p>Žádné výsledky pro "{{ query }}"</p>
 {% endif %}
 {% endblock %}
