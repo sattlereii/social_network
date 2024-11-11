@@ -100,19 +100,21 @@ def get_all_challenges(graph, username):
         ORDER BY c.end_date DESC
     """, username=username).data()
 
-def get_all_challenges_with_hashtags(graph):
-    # Předpokládám, že challenge a hashtag jsou propojeny vztahem TAGGED_WITH
+def get_all_challenges_with_hashtags(graph, username):
     query = """
-    MATCH (c:Challenge)-[:TAGGED_WITH]->(h:Hashtag)
+    MATCH (c:Challenge)
+    OPTIONAL MATCH (c)-[:TAGGED_WITH]->(h:Hashtag)
+    OPTIONAL MATCH (u:User {name: $username})-[r:JOINED]->(c)
+    OPTIONAL MATCH (u)-[cr:COMPLETED]->(c)
     RETURN c.title AS title, c.description AS description, c.created_at AS created_at,
            c.end_date AS end_date, c.creator AS creator, c.image_filename AS image_filename,
-           c.is_completed AS is_completed, c.is_joined AS is_joined, 
+           CASE WHEN r IS NOT NULL THEN true ELSE false END AS is_joined,
+           CASE WHEN cr IS NOT NULL THEN true ELSE false END AS is_completed,
            collect(h.name) AS hashtags
+    ORDER BY c.end_date DESC
     """
-    result = graph.run(query).data()
-    
-    # Předání výsledku jako seznam slovníků pro Flask šablonu
-    return result
+    return graph.run(query, username=username).data()
+
 
 def get_total_user_count(graph):
     """Získá celkový počet uživatelů."""
@@ -148,22 +150,25 @@ def get_active_challenges(graph):
     """).data()
 
 # Připojení uživatele k výzvě
-def join_challenge(graph, username, challenge_title, result=None, comment=None):
-    user_node = get_user_node(graph, username)
-    challenge_node = graph.evaluate("MATCH (c:Challenge {title: $title}) RETURN c", title=challenge_title)
-
-    if challenge_node:
-        # Zkontroluje, zda uživatel již není připojen
-        existing_join = graph.evaluate("""
-            MATCH (u:User {name: $username})-[r:JOINED]->(c:Challenge {title: $title})
-            RETURN r
-        """, username=username, title=challenge_title)
-
-        # Pokud není připojen, připojí ho k výzvě a přičte body
-        if not existing_join:
-            join_rel = Relationship(user_node, "JOINED", challenge_node)
-            graph.create(join_rel)
-        
+def get_challenges_for_user(username):
+    challenges = []
+    query = """
+    MATCH (c:Challenge)
+    OPTIONAL MATCH (u:User {name: $username})-[:JOINED]->(c)
+    RETURN c.title AS title, c.description AS description, c.created_at AS created_at,
+           c.end_date AS end_date, EXISTS((u)-[:JOINED]->(c)) AS is_joined
+    """
+    results = graph.run(query, username=username)
+    for record in results:
+        challenges.append({
+            "title": record["title"],
+            "description": record["description"],
+            "created_at": record["created_at"],
+            "end_date": record["end_date"],
+            "is_joined": record["is_joined"]
+        })
+    return challenges
+    
 # Získání archivu výzev
 def get_challenge_archive(graph):
     return graph.run("""
@@ -319,15 +324,15 @@ def home():
 
     logged_user = session["username"]
     logged_user_info = get_logged_user_profile(graph, logged_user)
-    challenges = get_all_challenges(graph, logged_user)
     
     # Načtení statistik
     total_user_count = get_total_user_count(graph)
     total_challenge_count = get_total_challenge_count(graph)
     highest_score_user = get_highest_score_user(graph)
     current_user_count = get_current_user_count()
-    challenges = get_all_challenges_with_hashtags(graph)
     
+    # Načtení výzev s ohledem na přihlášeného uživatele
+    challenges = get_all_challenges_with_hashtags(graph, logged_user)
     
     return render_template(
         "home.html",
@@ -441,22 +446,6 @@ def add_hashtag():
         flash("Hashtag byl úspěšně přidán.")
         return redirect(url_for("create_challenge_route"))
     return render_template("add_hashtag.html")
-
-
-
-
-@app.route("/join_challenge/<title>", methods=["POST"])
-def join_challenge_route(title):
-    if "username" not in session:
-        return redirect(url_for("login"))
-    
-    username = session["username"]
-    join_challenge(graph, username, title)
-    
-    flash("Připojil(a) jste se k výzvě!")
-    return redirect(url_for("home"))
-
-
 
 @app.route("/matches")
 def matches():
@@ -580,6 +569,25 @@ def add_interest_route():
         add_interest(graph, new_interest)
         flash("Nový zájem byl úspěšně přidán.")
     return redirect(url_for("edit_profile"))
+
+@app.route("/join_challenge/<title>", methods=["POST"])
+def join_challenge_route(title):
+    # Zkontrolujte, zda je uživatel přihlášen
+    if "username" not in session:
+        flash("Musíte být přihlášeni, abyste se mohli připojit k výzvě.")
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
+    # Připojte uživatele k výzvě v databázi (použití Neo4j jako příklad)
+    graph.run("""
+        MATCH (u:User {name: $username}), (c:Challenge {title: $title})
+        MERGE (u)-[:JOINED]->(c)
+    """, username=username, title=title)
+
+    flash("Úspěšně jste se připojili k výzvě!")
+    return redirect(url_for("home"))
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
