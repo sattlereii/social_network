@@ -10,8 +10,6 @@
 
 - pravidelné výzvy od systému -E
 
-- dát možnost všude přikládat foto ať už při vytváření výzev tak u splnění, profilovou atd - asi na to zatím kašlu, pushnu to a uvidím Jakš e s tím v budoucnu vypořádám
-
 - Poznámka - Adama J: Nechceme dát ještě jeden typ hashtagů jako profilových? Něco jako co by dokázalo identifikovat uživatele (zájmy atd.) pro lepší vyhledávání třeba. Tímto způsobem lépe vytvářet komunitu uživatelů.
 
     okey to zní fajn to zkusím takže na způsob té jeho seznamky, hledat lidi dle zájmu - vrhnu se na to dnes asi E
@@ -23,6 +21,8 @@
     myslíš jako za splnění nějakého milníku? třeba splněných 100 výzev atd? možná by se dali udělat bonusy později za splnění techto cílů, třeba stříbrný, zlatý atd rámeček kolem profilovky, případně odznáček na      profil nebo před jméno ohledně splnění tak aby se to zobrazovalo při jeho psaní výzev třeba jako je na twitchi když máš VIP, Moderátora atd - E
 
 - myslím že hashtagy, vyhledávání nefunguje :D - E
+
+- dát možnost všude přikládat foto ať už při vytváření výzev tak u splnění, profilovou atd - ODLOŽENÉ
 
 ## Splněné: ##
 
