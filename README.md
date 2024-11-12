@@ -1,5 +1,5 @@
 # problém je na propojení mezi počítači, potřebuji přijít na to proč se to rozbíjí mezi jednotlivými počítači #
-### _jednou za čas to popřesouvám dolu do splněných_ ###
+### _když doděláš práci přesun bod dolu a uprav to a dej kurzívu_ ###
 
 
 ## Nesplněné: ##
