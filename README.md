@@ -5,6 +5,7 @@
 ## Nesplněné: ##
 
 - nejde matches.html - opravuji, matches tak nějak fungují ale je problém v zájmech a bodech - E
+-     nejspíše se jedná o migraci dat nebo závislosti na staré databázi - E (může se na to někdo prknout?)
 
 - vytvořit logo a identitu (Adam J vezmu) - jestli se ti chce tak udělat i obrázky pro jednotlivé věci ale to až do budoucna při javascriptu
   
