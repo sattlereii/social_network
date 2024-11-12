@@ -20,7 +20,8 @@
 - dát možnost všude přikládat foto ať už při vytváření výzev tak u splnění, profilovou atd - ODLOŽENÉ
 
 
-- přidat friend requesty?, delete posts/edit, účet na private/public viz:
+- přidat friend requesty? - rozdělané - AdamM
+- delete posts/edit, účet na private/public viz:
 - https://github.com/azamatbayramov/PostAndLike
 
 ## Splněné: ##
