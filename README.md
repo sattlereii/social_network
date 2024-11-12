@@ -9,7 +9,7 @@
 
 - vytvořit logo a identitu (Adam J vezmu) - jestli se ti chce tak udělat i obrázky pro jednotlivé věci ale to až do budoucna při javascriptu
   
-- zobrazení archivnich příspěvků - E
+- zobrazení archivnich příspěvků - asi hotovo, ale zjistím to až zítra až se nějaká výzva dostane do za čas konce....uvidím jestli to dnes trochu neupravím :D
 
 - pravidelné výzvy od systému -E
 
