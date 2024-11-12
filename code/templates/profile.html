@@ -2,7 +2,9 @@
 
 {% block content %}
 <h2>Profil uživatele {{ profile.name }}</h2>
-
+<div style="margin-bottom: 20px;">
+    <a href="{{ url_for('archive', username=profile.name) }}">Zobrazit archivní příspěvky</a>
+</div>
 <!-- Profilová fotka -->
 {% if profile.profile_image %}
     <img src="{{ url_for('static', filename='uploads/' ~ profile.profile_image) }}" alt="Profilová fotka" style="width: 100px; height: 100px; border-radius: 50%; float: right;">

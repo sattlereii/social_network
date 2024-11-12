@@ -1,24 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Challenge Archive</title>
-</head>
-<body>
-    <h2>Challenge Archive</h2>
-    {% for challenge in archive %}
-        <h3>{{ challenge.c.title }}</h3>
-        <p><strong>Created by:</strong> {{ challenge.c.creator }}</p>
-        <p><strong>Ended on:</strong> {{ challenge.c.end_date }}</p>
-        <p>{{ challenge.c.description }}</p>
-        
-        <h4>Completions:</h4>
-        <ul>
-            {% for completion in challenge.completions %}
-                <li><a href="{{ url_for('profile', username=completion.user) }}">{{ completion.user }}</a>: <img src="{{ completion.photo }}" alt="Completion photo" width="100"></li>
-            {% endfor %}
-        </ul>
-    {% endfor %}
-</body>
-</html>
+{% extends "template.html" %}
+
+{% block content %}
+<h2>Archivní příspěvky uživatele {{ username }}</h2>
+
+{% if archived_challenges %}
+    <ul>
+        {% for challenge in archived_challenges %}
+            <li>
+                <h3>{{ challenge.title }}</h3>
+                <p>{{ challenge.description }}</p>
+                <p><strong>Datum ukončení:</strong> {{ challenge.end_date }}</p>
+                
+                {% if challenge.completions %}
+                    <h4>Splnění ostatních uživatelů:</h4>
+                    <ul>
+                        {% for completion in challenge.completions %}
+                            <li>
+                                <strong>{{ completion.user }}:</strong>
+                                {% if completion.photo %}
+                                    <img src="{{ url_for('static', filename='uploads/' ~ completion.photo) }}" alt="Dokončení" style="width: 100px; height: auto;">
+                                {% endif %}
+                                <p>Výsledek: {{ completion.result }}</p>
+                                <p>Komentář: {{ completion.comment }}</p>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>Žádné splnění od jiných uživatelů.</p>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Nemáte žádné archivní příspěvky.</p>
+{% endif %}
+{% endblock %}
+

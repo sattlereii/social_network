@@ -158,12 +158,19 @@ def get_current_user_count():
     return len(session)
 
 # Získání aktivních výzev
-def get_active_challenges(graph):
+def get_active_challenges(graph, username):
     return graph.run("""
         MATCH (c:Challenge)
         WHERE datetime(c.end_date) > datetime()
-        RETURN c.title, c.description, c.creator, c.end_date
-    """).data()
+        OPTIONAL MATCH (u:User {name: $username})-[r:JOINED]->(c)
+        OPTIONAL MATCH (u)-[cr:COMPLETED]->(c)
+        RETURN c.title AS title, c.description AS description, c.creator AS creator, c.end_date AS end_date,
+               c.created_at AS created_at,
+               CASE WHEN r IS NOT NULL THEN true ELSE false END AS is_joined,
+               CASE WHEN cr IS NOT NULL THEN true ELSE false END AS is_completed
+        ORDER BY c.end_date DESC
+    """, username=username).data()
+
 
 # Připojení uživatele k výzvě
 def get_challenges_for_user(username):
@@ -497,11 +504,17 @@ def matches():
     # Předáme data šabloně
     return render_template("matches.html", user_interests=user_interests, matches=matches)
 
+@app.route("/archive/<username>")
+def archive(username):
+    archived_challenges = graph.run("""
+        MATCH (u:User {name: $username})-[r:COMPLETED]->(c:Challenge)
+        WHERE datetime(c.end_date) <= datetime()
+        RETURN c.title AS title, c.description AS description, c.end_date AS end_date,
+               collect({result: r.result, comment: r.comment, photo: r.photo}) AS completions
+    """, username=username).data()
 
-@app.route("/archive")
-def archive():
-    archive_data = get_challenge_archive(graph)
-    return render_template("archive.html", archive=archive_data)
+    return render_template("archive.html", username=username, archived_challenges=archived_challenges)
+
 
 @app.route("/submit_result/<title>", methods=["POST"])
 def submit_result(title):
@@ -538,16 +551,19 @@ def submit_result(title):
 def challenge_details(title):
     challenge = graph.run("""
         MATCH (c:Challenge {title: $title})
-        RETURN c.title AS title, c.description AS description, c.creator AS creator, c.end_date AS end_date
+        OPTIONAL MATCH (c)<-[r:JOINED]-(u:User)
+        RETURN c.title AS title, c.description AS description, c.creator AS creator, c.end_date AS end_date,
+               CASE WHEN datetime(c.end_date) > datetime() THEN true ELSE false END AS is_active,
+               CASE WHEN r IS NOT NULL THEN true ELSE false END AS is_joined
     """, title=title).data()
 
-    # Pokud výzva existuje, zobrazí její detaily, jinak přesměruje na stránku s výzvami
     if challenge:
-        challenge = challenge[0]  # Vezmeme první a jediný výsledek
+        challenge = challenge[0]  # První výsledek
         return render_template("challenge_details.html", challenge=challenge)
     else:
         flash("Výzva nebyla nalezena.")
-        return redirect(url_for("search"))
+        return redirect(url_for("home"))
+
 
 @app.route("/delete_all_challenges", methods=["POST"])
 def delete_all_challenges():
