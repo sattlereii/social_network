@@ -1,4 +1,4 @@
-# úkoly jsou rozděleny, co chceš si vem a splň #
+# problém je na propojení mezi počítači, potřebuji přijít na to proč se to rozbíjí mezi jednotlivými počítači #
 ### _jednou za čas to popřesouvám dolu do splněných_ ###
 
 
