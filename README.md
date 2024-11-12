@@ -1,4 +1,7 @@
 # problém je na propojení mezi počítači, potřebuji přijít na to proč se to rozbíjí mezi jednotlivými počítači #
+
+asi to budu opravovat tak že data se scriptem budou ukládat do csv souboru a ten se bude na github nahrávat také -E
+
 ### _když doděláš práci přesun bod dolu a uprav to a dej kurzívu_ ###
 
 
