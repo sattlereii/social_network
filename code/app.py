@@ -157,7 +157,6 @@ def get_current_user_count():
     # Například můžete sledovat přihlášení v reálném čase prostřednictvím session nebo specifického pole v databázi.
     return len(session)
 
-
 # Získání aktivních výzev
 def get_active_challenges(graph):
     return graph.run("""
@@ -212,6 +211,9 @@ def get_user_node(graph, username):
 def delete_all_challenges(graph):
     graph.run("MATCH (c:Challenge) DETACH DELETE c")
 
+####################################################################################################################################
+# routy
+#####################################################################################################################################
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -248,7 +250,6 @@ def register():
     interests = graph.run("MATCH (i:Interest) RETURN i.name AS name").data()
     return render_template("register.html", interests=interests)
 
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -265,8 +266,6 @@ def login():
             flash("Invalid username or password.")
     
     return render_template("login.html")
-
-
 
 @app.route("/logout", methods=["POST"])
 def logout():
@@ -286,23 +285,26 @@ def update_profile():
     new_age = request.form.get("age")
     selected_interests = request.form.getlist("interests")  # Získá vybrané zájmy jako seznam
 
-    print("Selected interests:", selected_interests)  # Kontrolní výpis pro ladění
+    # 1. Nejprve odstraňte všechny stávající zájmy uživatele (vztahy INTERESTED_IN)
+    graph.run("""
+        MATCH (u:User {name: $username})-[r:INTERESTED_IN]->(i:Interest)
+        DELETE r
+    """, username=username)
 
-    # Zpracování nahrání profilového obrázku
-    file = request.files.get("profile_image")
-    if file and allowed_file(file.filename):
-        filename = secure_filename(f"{username}_profile_{file.filename}")
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        profile_image_filename = filename
-        # Uložíme cestu k obrázku do databáze
+    # 2. Přidejte nové zájmy na základě uživatelského výběru
+    for interest_name in selected_interests:
+        # Zkontrolujte, zda uzel zájmu existuje; pokud ne, vytvořte ho
         graph.run("""
-            MATCH (u:User {name: $username})
-            SET u.profile_image = $profile_image
-        """, username=username, profile_image=profile_image_filename)
-    else:
-        profile_image_filename = None
+            MERGE (i:Interest {name: $interest_name})
+        """, interest_name=interest_name)
 
-    # Aktualizace hesla, pokud bylo zadáno
+        # Vytvořte vztah INTERESTED_IN mezi uživatelem a zájmem
+        graph.run("""
+            MATCH (u:User {name: $username}), (i:Interest {name: $interest_name})
+            MERGE (u)-[:INTERESTED_IN]->(i)
+        """, username=username, interest_name=interest_name)
+
+    # Aktualizujte ostatní údaje (jméno, heslo, věk) podle potřeby
     if new_password:
         password_hash = generate_password_hash(new_password)
         graph.run("""
@@ -310,16 +312,16 @@ def update_profile():
             SET u.password = $password_hash
         """, username=username, password_hash=password_hash)
 
-    # Aktualizace ostatních údajů včetně zájmů
     graph.run("""
         MATCH (u:User {name: $username})
-        SET u.name = $new_name, u.age = $new_age, u.interests = $selected_interests
-    """, username=username, new_name=new_name, new_age=int(new_age) if new_age else None, selected_interests=selected_interests)
+        SET u.name = $new_name, u.age = $new_age
+    """, username=username, new_name=new_name, new_age=int(new_age) if new_age else None)
 
-    # Aktualizace jména v session, pokud bylo změněno
+    # Aktualizujte session, pokud se změnilo jméno
     session["username"] = new_name
     flash("Profil byl úspěšně aktualizován.")
     return redirect(url_for("user_profile"))
+
 
 @app.route("/edit_profile")
 def edit_profile():
@@ -376,23 +378,38 @@ def user_profile():
         return redirect(url_for("login"))
 
     username = session["username"]
-    user_info = get_logged_user_profile(graph, username)
+    
+    # Načtení informací o uživateli včetně zájmů
+    user_info = graph.run("""
+        MATCH (u:User {name: $username})
+        RETURN u.name AS name, u.age AS age, u.sun_points AS sun_points
+    """, username=username).data()[0]
 
-    # Získání probíhajících a splněných výzev
-    ongoing_challenges = graph.run("""
-        MATCH (u:User {name: $username})-[:JOINED]->(c:Challenge)
-        WHERE NOT (u)-[:COMPLETED]->(c)
-        RETURN c.title AS title, c.description AS description, c.end_date AS end_date
+    # Načtení zájmů uživatele
+    user_interests = graph.run("""
+        MATCH (u:User {name: $username})-[:INTERESTED_IN]->(i:Interest)
+        RETURN i.name AS interest
     """, username=username).data()
-    
-    completed_challenges = graph.run("""
-        MATCH (u:User {name: $username})-[r:COMPLETED]->(c:Challenge)
-        RETURN c.title AS title, c.description AS description, c.end_date AS end_date, r.result AS result, r.comment AS comment
-    """, username=username).data()
-    
-    return render_template("profile.html", profile=user_info, ongoing_challenges=ongoing_challenges, completed_challenges=completed_challenges)
 
-    
+    # Převod zájmů na jednoduchý seznam názvů
+    interests_list = [interest['interest'] for interest in user_interests]
+
+    return render_template("profile.html", profile=user_info, interests=interests_list)
+
+@app.route("/admin/delete_all_interests", methods=["POST"])
+def delete_all_interests():
+    if "username" not in session or session["username"] != "admin":
+        flash("Přístup pouze pro administrátora.")
+        return redirect(url_for("home"))
+
+    # Příkaz pro smazání všech zájmů u všech uživatelů
+    graph.run("""
+        MATCH (u:User)-[r:INTERESTED_IN]->(i:Interest)
+        DELETE r
+    """)
+    flash("Všechny zájmy byly úspěšně smazány u všech uživatelů.")
+    return redirect(url_for("admin"))
+
 @app.route("/profile/<username>")
 def users_profile(username):
     user_info = get_logged_user_profile(graph, username)
@@ -454,25 +471,31 @@ def matches():
 
     username = session["username"]
 
-    # Získání zájmů aktuálně přihlášeného uživatele
-    user_interests = graph.run("""
-    MATCH (u:User), (i:Interest)
-    WHERE i.name IN u.interests
-    MERGE (u)-[:INTERESTED_IN]->(i)
-""")
+    # Vytvoření vztahů INTERESTED_IN pro aktuálního uživatele, pokud ještě neexistují
+    graph.run("""
+        MATCH (u:User {name: $username}), (i:Interest)
+        WHERE i.name IN u.interests
+        MERGE (u)-[:INTERESTED_IN]->(i)
+    """, username=username)
 
+    # Načtení zájmů aktuálního uživatele
+    user_interests = graph.run("""
+        MATCH (u:User {name: $username})-[:INTERESTED_IN]->(i:Interest)
+        RETURN i.name AS interest
+    """, username=username).data()
 
     # Najdeme uživatele s podobnými zájmy
     matches = graph.run("""
-    MATCH (u:User {name: $username})-[:INTERESTED_IN]->(interest:Interest)<-[:INTERESTED_IN]-(match:User)
-    WHERE u.name <> match.name
-    RETURN match.name AS name, collect(interest.name) AS shared_interests
-""", username=username).data()
+        MATCH (u:User {name: $username})-[:INTERESTED_IN]->(interest:Interest)<-[:INTERESTED_IN]-(match:User)
+        WHERE u.name <> match.name
+        RETURN match.name AS name, collect(interest.name) AS shared_interests
+    """, username=username).data()
 
+    # Převod výsledků na seznam řetězců pro user_interests
+    user_interests = [record['interest'] for record in user_interests]
 
     # Předáme data šabloně
     return render_template("matches.html", user_interests=user_interests, matches=matches)
-
 
 
 @app.route("/archive")
@@ -510,7 +533,6 @@ def submit_result(title):
         flash("Výsledek byl úspěšně odeslán a body byly přičteny.")
     
     return redirect(url_for("home"))
-
 
 @app.route("/challenge/<title>")
 def challenge_details(title):
@@ -607,7 +629,6 @@ def join_challenge_route(title):
 
     flash("Úspěšně jste se připojili k výzvě!")
     return redirect(url_for("home"))
-
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

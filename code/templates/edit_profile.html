@@ -24,10 +24,13 @@
         <select id="interests" name="interests" multiple class="select2" style="width: 100%;">
             <option value="" disabled></option> <!-- Prázdná volba pro vyhledávání -->
             {% for interest in interests %}
-                <option value="{{ interest.name }}">{{ interest.name }}</option>
+                <option value="{{ interest.name }}" {% if interest.name in profile.interests %}selected{% endif %}>
+                    {{ interest.name }}
+                </option>
             {% endfor %}
         </select>
     </div>
+    
        
     
     <button type="submit">Uložit změny</button>

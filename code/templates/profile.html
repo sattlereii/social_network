@@ -13,8 +13,8 @@
     <li><strong>Věk:</strong> {{ profile.age }}</li>
     <li><strong>Zájmy:</strong>
         <ul>
-            {% if profile.interests %}
-                {% for interest in profile.interests %}
+            {% if interests %}
+                {% for interest in interests %}
                     <li>{{ interest }}</li>
                 {% endfor %}
             {% else %}
@@ -69,4 +69,5 @@
 {% endif %}
 
 {% endblock %}
+
 
