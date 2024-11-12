@@ -4,6 +4,8 @@
 
 ## Nesplněné: ##
 
+- nejde matches.html - opravuji - E
+
 - vytvořit logo a identitu (Adam J vezmu) - jestli se ti chce tak udělat i obrázky pro jednotlivé věci ale to až do budoucna při javascriptu
   
 - zobrazení archivnich příspěvků - E
