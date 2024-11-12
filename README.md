@@ -4,7 +4,7 @@
 
 ## Nesplněné: ##
 
-- nejde matches.html - opravuji - E
+- nejde matches.html - opravuji, matches tak nějak fungují ale je problém v zájmech a bodech - E
 
 - vytvořit logo a identitu (Adam J vezmu) - jestli se ti chce tak udělat i obrázky pro jednotlivé věci ale to až do budoucna při javascriptu
   
