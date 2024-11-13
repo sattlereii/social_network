@@ -1,3 +1,7 @@
+# Tak problém je mezi monitorem a židlí #
+
+# JSem nasraná, polovinu věcí jsem rozbila a mám chut se na to vysrat....ne kappa, jen to možná začnu od znova projdu kousek po kousku a začnu na nule, tak budte ready #
+
 # problém je na propojení mezi počítači, potřebuji přijít na to proč se to rozbíjí mezi jednotlivými počítači #
 
 asi to budu opravovat tak že data se scriptem budou ukládat do csv souboru a ten se bude na github nahrávat také -E
