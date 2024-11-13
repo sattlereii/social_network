@@ -7,6 +7,8 @@ asi to budu opravovat tak že data se scriptem budou ukládat do csv souboru a t
 
 ## Nesplněné: ##
 
+- rozbila jsem i profilový obrázek opět, asi včera zkusím to dohledat no
+
 - nejde matches.html - opravuji, matches tak nějak fungují ale je problém v zájmech a bodech - E
 -     nejspíše se jedná o migraci dat nebo závislosti na staré databázi - E (může se na to někdo prknout?)
 
