@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Active Challenges</h2>
+{% if challenges %}
+    <ul>
+        {% for challenge in challenges %}
+        <li>
+            <strong>Created by: <a href="{{ url_for('profile.view_other_profile', username=challenge['c']['created_by']) }}">{{ challenge['c']['created_by'] }}</a></strong><br>
+            Created on: {{ challenge['c']['created_at'] }}<br>
+            Time remaining: {{ challenge['c']['time_remaining'] }} days<br>
+            <a href="{{ url_for('challenges.challenge_detail', challenge_id=challenge['c']['id']) }}">View Challenge</a>
+        </li>
+        
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No challenges available.</p>
+{% endif %}
+<a href="{{ url_for('challenges.create_challenge') }}" class="floating-button">+</a>
+
+{% endblock %}

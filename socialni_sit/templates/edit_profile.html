@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Edit Profile</h2>
+<form method="post">
+    <label>Username:</label>
+    <input name="username" value="{{ user['username'] }}" required>
+    <label>Age:</label>
+    <input name="age" type="number" value="{{ user['age'] }}" required>
+    <label>Interests (comma-separated):</label>
+    <input name="interests" value="{{ user['interests'] | join(', ') }}" required>
+    <button type="submit">Save Changes</button>
+</form>
+<a href="{{ url_for('profile.view_profile') }}">Back to Profile</a>
+{% endblock %}

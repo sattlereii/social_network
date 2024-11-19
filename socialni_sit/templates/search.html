@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Search</h2>
+<form method="post">
+    <input name="query" placeholder="Search for users or challenges" required>
+    <button type="submit">Search</button>
+</form>
+
+{% if users %}
+    <h3>User Results</h3>
+    <ul>
+        {% for user in users %}
+            <li>{{ user['u']['username'] }} - Interests: {{ user['u']['interests'] | join(', ') }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% if challenges %}
+    <h3>Challenge Results</h3>
+    <ul>
+        {% for challenge in challenges %}
+            <li>{{ challenge['c']['name'] }} - Hashtags: {{ challenge['c']['hashtags'] | join(', ') }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% endblock %}

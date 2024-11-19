@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Create a New Challenge</h2>
+<form method="post">
+    <label for="name">Challenge Name:</label>
+    <input id="name" name="name" placeholder="Enter challenge name" required>
+
+    <label for="duration">Duration (in days):</label>
+    <input id="duration" name="duration" type="number" placeholder="Enter duration" required>
+
+    <label for="description">Description:</label>
+    <textarea id="description" name="description" placeholder="Describe the challenge" required></textarea>
+
+    <label for="hashtags">Hashtags (comma-separated):</label>
+    <input id="hashtags" name="hashtags" placeholder="e.g., fitness, wellness, motivation">
+
+    <button type="submit">Create Challenge</button>
+</form>
+<a href="{{ url_for('challenges.home') }}">Back to Home</a>
+{% endblock %}

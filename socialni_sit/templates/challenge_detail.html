@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>{{ challenge['name'] }}</h2>
+<p>{{ challenge['description'] }}</p>
+<p>Duration: {{ challenge['duration'] }} days</p>
+<p>Time remaining: {{ challenge['time_remaining'] }} days</p>
+
+{% if user_completed %}
+    <p>You have successfully completed this challenge!</p>
+{% elif user_registered %}
+    <p>You are registered for this challenge!</p>
+    <form method="post">
+        <label for="result">Enter your result:</label>
+        <input id="result" name="result" required>
+        <button type="submit">Submit Result</button>
+    </form>
+{% else %}
+    <form method="post">
+        <button type="submit" name="join" value="true">Join Challenge</button>
+    </form>
+{% endif %}
+
+<a href="{{ url_for('challenges.home') }}">Back to Home</a>
+{% endblock %}
