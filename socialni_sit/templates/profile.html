@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>{{ user['username'] }}'s Profile</h2>
+<p><strong>Činky:</strong> {{ user['points'] }} 💪</p>
 
 <h3>Created Challenges</h3>
 {% if created_challenges %}
@@ -17,36 +18,20 @@
     <p>No created challenges.</p>
 {% endif %}
 
-
-<h3>Joined Challenges</h3>
-{% if joined_challenges %}
-    <ul>
-        {% for challenge in joined_challenges %}
-        <li>
-            <a href="{{ url_for('challenges.challenge_detail', challenge_id=challenge['c']['id']) }}">
-                {{ challenge['c']['name'] }}
-            </a> - Duration: {{ challenge['c']['duration'] }} days
-        </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No joined challenges.</p>
-{% endif %}
-
 <h3>Completed Challenges</h3>
 {% if completed_challenges %}
     <ul>
         {% for challenge in completed_challenges %}
         <li>
-            <a href="{{ url_for('challenges.challenge_detail', challenge_id=challenge['c']['id']) }}">
-                {{ challenge['c']['name'] }}
-            </a> - Result: {{ challenge['c']['result'] if 'result' in challenge['c'] else 'No result available' }}
+            <strong>{{ challenge['c']['name'] }}</strong> - 
+            Result: {{ challenge['result'] if challenge['result'] else 'No result available' }}
         </li>
         {% endfor %}
     </ul>
 {% else %}
     <p>No completed challenges.</p>
 {% endif %}
+
 
 {% if is_self %}
     <a href="{{ url_for('profile.edit_profile') }}">Edit Profile</a> |

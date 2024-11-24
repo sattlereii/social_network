@@ -11,35 +11,37 @@ def view_profile():
     username = session['username']
     conn = Neo4jConnection()
 
-   # Výzvy, které uživatel vytvořil
+    # Načtení bodů uživatele
+    user_data = conn.query(
+        "MATCH (u:User {username: $username}) RETURN u.points AS points",
+        {'username': username}
+    )
+    points = user_data[0]['points'] if user_data else 0
+
+    # Výzvy, které uživatel vytvořil
     created_challenges = conn.query(
         "MATCH (u:User {username: $username})-[:CREATED]->(c:Challenge) RETURN c",
         {'username': username}
     )
 
-    # Výzvy, kterých se uživatel účastní
-    joined_challenges = conn.query(
-        "MATCH (u:User {username: $username})-[:JOINED]->(c:Challenge) RETURN c",
-        {'username': username}
-    )
-
     # Splněné výzvy
     completed_challenges = conn.query(
-        "MATCH (u:User {username: $username})-[:COMPLETED]->(c:Challenge) RETURN c",
-        {'username': username}
-    )
+    """
+    MATCH (u:User {username: $username})-[rel:COMPLETED]->(c:Challenge)
+    RETURN c, rel.result AS result
+    """,
+    {'username': username}
+)
+
 
     conn.close()
     return render_template(
-        'profile.html', 
-        user={'username': username},
+        'profile.html',
+        user={'username': username, 'points': points},
         created_challenges=created_challenges,
-        joined_challenges=joined_challenges,
         completed_challenges=completed_challenges,
-        is_self=True  # Označení, že jde o vlastní profil
+        is_self=True
     )
-
-
 
 @profile_blueprint.route('/profile/edit', methods=['GET', 'POST'])
 def edit_profile():
@@ -85,12 +87,6 @@ def view_other_profile(username):
         {'username': username}
     )
 
-    # Výzvy, kterých se uživatel účastní
-    joined_challenges = conn.query(
-        "MATCH (u:User {username: $username})-[:JOINED]->(c:Challenge) RETURN c",
-        {'username': username}
-    )
-
     # Splněné výzvy
     completed_challenges = conn.query(
         "MATCH (u:User {username: $username})-[:COMPLETED]->(c:Challenge) RETURN c",
@@ -102,7 +98,6 @@ def view_other_profile(username):
         'profile.html', 
         user={'username': username},
         created_challenges=created_challenges,
-        joined_challenges=joined_challenges,
         completed_challenges=completed_challenges,
         is_self=False  # Označení, že jde o jiný profil
     )
