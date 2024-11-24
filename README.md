@@ -5,3 +5,5 @@ Potřebuji se na to zeptat Beránka.
 Ted nikdo nebudete mít ty výzvy a uživatele jako tam mám já
 
 - přidat toho admina s rozšířenými právy
+
+- +/- kolem 5.prosince začít s grafikou 
