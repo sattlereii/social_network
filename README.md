@@ -7,4 +7,6 @@ Ted nikdo nebudete mít ty výzvy a uživatele jako tam mám já
 
 - přidat toho admina s rozšířenými právy
 
+- upravit čas, view challenge změnit na název, záliby na profilu
+
 - +/- kolem 5.prosince začít s grafikou 
