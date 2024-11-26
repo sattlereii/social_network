@@ -31,7 +31,9 @@
 {% else %}
     <p>No completed challenges.</p>
 {% endif %}
-
+{% if is_admin %}
+    <a href="{{ url_for('admin.admin_menu') }}">Go to Admin Menu</a>
+{% endif %}
 
 {% if is_self %}
     <a href="{{ url_for('profile.edit_profile') }}">Edit Profile</a> |

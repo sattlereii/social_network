@@ -11,28 +11,29 @@ def view_profile():
     username = session['username']
     conn = Neo4jConnection()
 
-    # Načtení bodů uživatele
+    # Načtení bodů uživatele a role
     user_data = conn.query(
-        "MATCH (u:User {username: $username}) RETURN u.points AS points",
+        "MATCH (u:User {username: $username}) RETURN u.points AS points, u.role AS role",
         {'username': username}
     )
     points = user_data[0]['points'] if user_data else 0
+    role = user_data[0]['role'] if user_data and 'role' in user_data[0] else "user"
 
     # Výzvy, které uživatel vytvořil
     created_challenges = conn.query(
         "MATCH (u:User {username: $username})-[:CREATED]->(c:Challenge) RETURN c",
         {'username': username}
     )
-
+    print("Session data:", session)
     # Splněné výzvy
     completed_challenges = conn.query(
-    """
-    MATCH (u:User {username: $username})-[rel:COMPLETED]->(c:Challenge)
-    RETURN c, rel.result AS result
-    """,
-    {'username': username}
-)
-
+        """
+        MATCH (u:User {username: $username})-[rel:COMPLETED]->(c:Challenge)
+        RETURN c, rel.result AS result
+        """,
+        {'username': username}
+    )
+    
 
     conn.close()
     return render_template(
@@ -40,7 +41,8 @@ def view_profile():
         user={'username': username, 'points': points},
         created_challenges=created_challenges,
         completed_challenges=completed_challenges,
-        is_self=True
+        is_self=True,
+        is_admin=(role == "admin")  # Kontrola, zda je uživatel admin
     )
 
 @profile_blueprint.route('/profile/edit', methods=['GET', 'POST'])

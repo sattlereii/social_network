@@ -1,10 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from db.neo4j_connection import Neo4jConnection
 from db.export_data import export_data
 from db.import_data import import_data
 
 auth_blueprint = Blueprint('auth', __name__)
 
+# Login route
 # Login route
 @auth_blueprint.route('/login', methods=['GET', 'POST'])
 def login():
@@ -13,15 +14,31 @@ def login():
         password = request.form['password']
 
         conn = Neo4jConnection()
-        user = conn.query("MATCH (u:User {username: $username, password: $password}) RETURN u",
-                          {'username': username, 'password': password})
-        conn.close()
 
-        if user:
+        # Získání uživatele na základě přihlašovacích údajů
+        user = conn.query(
+            "MATCH (u:User {username: $username, password: $password}) RETURN u.role AS role, u.suspended AS suspended",
+            {'username': username, 'password': password}
+        )
+
+        if user:  # Pokud byl uživatel nalezen
+            user_data = user[0]  # První výsledek dotazu
+
+            if 'suspended' in user_data and user_data['suspended']:  # Kontrola, zda je účet pozastaven
+                flash("Tento účet je pozastaven!", "danger")
+                conn.close()
+                return redirect(url_for('auth.login'))
+
+            # Uložení uživatelského jména a role do session
             session['username'] = username
-            return redirect(url_for('challenges.home'))
+            session['role'] = user_data['role']  # Získání role uživatele
+            flash("Přihlášení bylo úspěšné!", "success")
+            conn.close()
+            return redirect(url_for('profile.view_profile'))
         else:
-            return "Login failed", 401
+            flash("Neplatné přihlašovací údaje.", "danger")
+            conn.close()
+            return redirect(url_for('auth.login'))
 
     return render_template('login.html')
 
