@@ -91,23 +91,39 @@ def challenge_detail(challenge_id):
         return redirect(url_for('auth.login'))
 
     conn = Neo4jConnection()
-    challenge = conn.query("MATCH (c:Challenge) WHERE c.id = $id RETURN c", {'id': challenge_id})[0]['c']
-    
-    # Kontrola, zda uživatel již přihlásil nebo dokončil výzvu
+
+    # Načíst detail výzvy
+    challenge_data = conn.query(
+        "MATCH (c:Challenge) WHERE c.id = $id RETURN c",
+        {'id': challenge_id}
+    )
+    if not challenge_data:
+        flash("Challenge not found!", "danger")
+        return redirect(url_for('challenges.home'))
+
+    challenge = challenge_data[0]['c']
+
+    # Kontrola, zda uživatel přihlásil nebo dokončil výzvu
     user_joined = conn.query(
-        "MATCH (u:User {username: $username})-[:JOINED]->(c:Challenge {id: $id}) RETURN c",
+        """
+        MATCH (u:User {username: $username})-[:JOINED]->(c:Challenge {id: $id})
+        RETURN c
+        """,
         {'username': session['username'], 'id': challenge_id}
     )
     user_completed = conn.query(
-        "MATCH (u:User {username: $username})-[:COMPLETED]->(c:Challenge {id: $id}) RETURN c",
+        """
+        MATCH (u:User {username: $username})-[:COMPLETED]->(c:Challenge {id: $id})
+        RETURN c
+        """,
         {'username': session['username'], 'id': challenge_id}
     )
 
+    # Zpracování formuláře
     if request.method == 'POST':
         if 'result' in request.form:
             result = request.form['result']
-
-    # Uložení výsledku a změna relace z JOINED na COMPLETED
+            # Dokončit výzvu
             conn.query(
                 """
                 MATCH (u:User {username: $username})-[r:JOINED]->(c:Challenge {id: $id})
@@ -123,24 +139,27 @@ def challenge_detail(challenge_id):
                 {'username': session['username']}
             )
             conn.close()
-            flash("Výzvu jste úspěšně dokončili a získali jste 1 činku!")
+            flash("Výzvu jste úspěšně dokončili a získali jste 1 činku!", "success")
             return redirect(url_for('profile.view_profile'))
 
         else:
-            # Přihlášení k výzvě, pokud uživatel není přihlášen
+            # Přihlásit se k výzvě
             if not user_joined and not user_completed:
                 conn.query(
                     "MATCH (u:User {username: $username}), (c:Challenge {id: $id}) "
-                    "MERGE (u)-[:JOINED]->(c)", 
+                    "MERGE (u)-[:JOINED]->(c)",
                     {'username': session['username'], 'id': challenge_id}
                 )
-                flash("Připojili jste se k výzvě.")
+                conn.close()
+                flash("Připojili jste se k výzvě!", "success")
                 return redirect(url_for('challenges.challenge_detail', challenge_id=challenge_id))
 
     conn.close()
+
     return render_template(
-        'challenge_detail.html', 
-        challenge=challenge, 
-        user_joined=bool(user_joined), 
+        'challenge_detail.html',
+        challenge=challenge,
+        user_joined=bool(user_joined),
         user_completed=bool(user_completed)
     )
+

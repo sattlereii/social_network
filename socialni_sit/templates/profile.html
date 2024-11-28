@@ -3,17 +3,27 @@
 <h2>{{ user['username'] }}'s Profile</h2>
 <p><strong>Činky:</strong> {{ user['points'] }} 💪</p>
 
-<h3>Created Challenges</h3>
 {% if created_challenges %}
-    <ul>
-        {% for challenge in created_challenges %}
+<h3>Created Challenges</h3>
+<ul>
+    {% for challenge in created_challenges %}
         <li>
-            <a href="{{ url_for('challenges.challenge_detail', challenge_id=challenge['c']['id']) }}">
-                {{ challenge['c']['name'] }}
-            </a> - Duration: {{ challenge['c']['duration'] }} days
+            <a href="{{ url_for('challenges.challenge_detail', challenge_id=challenge['id']) }}">
+                {{ challenge['name'] }}
+            </a>
+            <br>
+            Hashtags: 
+            {% if challenge['hashtags'] %}
+                {{ challenge['hashtags']|join(', ') }}
+            {% else %}
+                No hashtags
+            {% endif %}
         </li>
-        {% endfor %}
-    </ul>
+    {% endfor %}
+</ul>
+
+
+
 {% else %}
     <p>No created challenges.</p>
 {% endif %}

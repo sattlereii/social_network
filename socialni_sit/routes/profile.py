@@ -16,26 +16,37 @@ def view_profile():
         "MATCH (u:User {username: $username}) RETURN u.points AS points, u.role AS role",
         {'username': username}
     )
-    points = user_data[0]['points'] if user_data else 0
+    points = user_data[0]['points'] if user_data and 'points' in user_data[0] else 0
     role = user_data[0]['role'] if user_data and 'role' in user_data[0] else "user"
 
     # Výzvy, které uživatel vytvořil
     created_challenges = conn.query(
-        "MATCH (u:User {username: $username})-[:CREATED]->(c:Challenge) RETURN c",
+        """
+        MATCH (u:User {username: $username})-[:CREATED]->(c:Challenge)
+        RETURN c.id AS id, c.name AS name, c.hashtags AS hashtags
+        """,
         {'username': username}
     )
-    print("Session data:", session)
+    created_challenges = created_challenges if created_challenges else []  # Pokud je None, nastav prázdný seznam
+
+    # Debug: výpis dat vytvořených výzev
+    print("Created Challenges Debug:", created_challenges)
+
     # Splněné výzvy
     completed_challenges = conn.query(
         """
         MATCH (u:User {username: $username})-[rel:COMPLETED]->(c:Challenge)
-        RETURN c, rel.result AS result
+        RETURN c.id AS id, c.name AS name, rel.result AS result
         """,
         {'username': username}
     )
-    
+    completed_challenges = completed_challenges if completed_challenges else []  # Pokud je None, nastav prázdný seznam
+
+    # Debug: výpis dat sezení
+    print("Session data:", session)
 
     conn.close()
+
     return render_template(
         'profile.html',
         user={'username': username, 'points': points},
@@ -44,6 +55,7 @@ def view_profile():
         is_self=True,
         is_admin=(role == "admin")  # Kontrola, zda je uživatel admin
     )
+
 
 @profile_blueprint.route('/profile/edit', methods=['GET', 'POST'])
 def edit_profile():
@@ -85,7 +97,10 @@ def view_other_profile(username):
 
     # Výzvy, které uživatel vytvořil
     created_challenges = conn.query(
-        "MATCH (u:User {username: $username})-[:CREATED]->(c:Challenge) RETURN c",
+        """
+        MATCH (u:User {username: $username})-[:CREATED]->(c:Challenge)
+        RETURN c.id AS id, c.name AS name, c.hashtags AS hashtags
+        """,
         {'username': username}
     )
 

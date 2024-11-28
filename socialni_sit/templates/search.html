@@ -7,20 +7,40 @@
 </form>
 
 {% if users %}
-    <h3>User Results</h3>
+    <h2>User Results</h2>
     <ul>
         {% for user in users %}
-            <li>{{ user['u']['username'] }} - Interests: {{ user['u']['interests'] | join(', ') }}</li>
+            <li>
+                <a href="{{ url_for('profile.view_other_profile', username=user['username']) }}">
+                    {{ user['username'] }}
+                </a> - Interests: {{ user['interests'] if user['interests'] else 'No interests available' }}
+            </li>
         {% endfor %}
     </ul>
+{% else %}
+    <p>No users found.</p>
 {% endif %}
 
 {% if challenges %}
-    <h3>Challenge Results</h3>
-    <ul>
-        {% for challenge in challenges %}
-            <li>{{ challenge['c']['name'] }} - Hashtags: {{ challenge['c']['hashtags'] | join(', ') }}</li>
-        {% endfor %}
-    </ul>
+<h3>Challenge Results</h3>
+<ul>
+    {% for challenge in challenges %}
+<li>
+    <a href="{{ url_for('challenges.challenge_detail', challenge_id=challenge['id']) }}">
+        {{ challenge['name'] }}
+    </a> - Hashtags:
+    {% if challenge['hashtags'] %}
+        {{ challenge['hashtags'] | join(', ') }}
+    {% else %}
+        No hashtags
+    {% endif %}
+</li>
+{% endfor %}
+
+
+</ul>
+
+{% else %}
+    <p>No challenges found.</p>
 {% endif %}
 {% endblock %}
