@@ -1,5 +1,7 @@
-# dobře, je potřeba vyřešit zálohování dat mezi počítači, aby se třeba každých pět minut, nebo po každé změně aktualizovali data a ukládali se do csv souboru a při každém spuštění se načetli.
-# Potřebuji se na to zeptat Beránka. (je připraven soubor export_data.py a také import_data.py - ADAM.M na to mrkne !!!!!!!!!!!!!!!!!! 
+# úkoly
+
+## dobře, je potřeba vyřešit zálohování dat mezi počítači, aby se třeba každých pět minut, nebo po každé změně aktualizovali data a ukládali se do csv souboru a při každém spuštění se načetli.
+## Potřebuji se na to zeptat Beránka. (je připraven soubor export_data.py a také import_data.py - ADAM.M na to mrkne !!!!!!!!!!!!!!!!!! 
 
 Ted nikdo nebudete mít ty výzvy a uživatele jako tam mám já
 
