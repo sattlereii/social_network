@@ -9,4 +9,6 @@ Ted nikdo nebudete mít ty výzvy a uživatele jako tam mám já
 
 - upravit čas, view challenge změnit na název, záliby na profilu, při kliknutí na cizí profil ukázat činky, záliby a splnění výzev jako na vlastním profilu
 
+- vyhledávání spraveno snad ale dodělám vyhledávání bez háčků čarek a velká malá písmena
+
 - +/- kolem 5.prosince začít s grafikou 
