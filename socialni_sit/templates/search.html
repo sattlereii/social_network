@@ -1,46 +1,56 @@
 {% extends "base.html" %}
-{% block content %}
-<h2>Search</h2>
-<form method="post">
-    <input name="query" placeholder="Search for users or challenges" required>
-    <button type="submit">Search</button>
-</form>
 
-{% if users %}
-    <h2>User Results</h2>
-    <ul>
-        {% for user in users %}
-            <li>
-                <a href="{{ url_for('profile.view_other_profile', username=user['username']) }}">
-                    {{ user['username'] }}
-                </a> - Interests: {{ user['interests'] if user['interests'] else 'No interests available' }}
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No users found.</p>
+{% block content %}
+<h1>Search Results</h1>
+
+<!-- Zobrazení hledané fráze a počtu výsledků -->
+{% if search_term %}
+    <h2>Search term: "{{ search_term }}"</h2>
+    <p>{{ users|length }} user(s) found, {{ challenges|length }} challenge(s) found, {{ hashtags|length }} hashtag(s) found.</p>
 {% endif %}
 
-{% if challenges %}
-<h3>Challenge Results</h3>
+<!-- Zobrazení uživatelů -->
+<h3>Users</h3>
 <ul>
-    {% for challenge in challenges %}
-<li>
-    <a href="{{ url_for('challenges.challenge_detail', challenge_id=challenge['id']) }}">
-        {{ challenge['name'] }}
-    </a> - Hashtags:
-    {% if challenge['hashtags'] %}
-        {{ challenge['hashtags'] | join(', ') }}
-    {% else %}
-        No hashtags
+    {% for user in users %}
+        <li>
+            <strong>{{ user.username }}</strong>
+            {% if user.interests %}
+                - Interests: {{ user.interests | join(', ') }}
+            {% endif %}
+        </li>
+    {% endfor %}
+    {% if not users %}
+        <li>No users found.</li>
     {% endif %}
-</li>
-{% endfor %}
-
-
 </ul>
 
-{% else %}
-    <p>No challenges found.</p>
-{% endif %}
+<!-- Zobrazení výzev -->
+<h3>Challenges</h3>
+<ul>
+    {% for challenge in challenges %}
+        <li>
+            <a href="{{ url_for('challenges.challenge_detail', challenge_id=challenge.id) }}">
+                <strong>{{ challenge.name }}</strong>
+            </a>
+            {% if challenge.hashtags %}
+                - Hashtags: {{ challenge.hashtags | join(', ') }}
+            {% endif %}
+        </li>
+    {% endfor %}
+    {% if not challenges %}
+        <li>No challenges found.</li>
+    {% endif %}
+</ul>
+
+<!-- Zobrazení hashtagů -->
+<h3>Hashtags</h3>
+<ul>
+    {% for hashtag in hashtags %}
+        <li>#{{ hashtag }}</li>
+    {% endfor %}
+    {% if not hashtags %}
+        <li>No hashtags found.</li>
+    {% endif %}
+</ul>
 {% endblock %}
