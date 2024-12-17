@@ -4,17 +4,66 @@
     <meta charset="UTF-8">
     <title>Social Network</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Úprava pro inline zobrazení položek menu */
+        header a {
+            margin-right: 20px;
+            text-decoration: none;
+        }
+
+        /* Zajištění, že menu položky budou vedle sebe */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Úprava pro vyhledávací formulář */
+        .search-form {
+            display: flex;
+            gap: 5px;
+        }
+
+        .search-form input {
+            padding: 5px;
+            width: 250px;
+            font-size: 1rem;
+        }
+
+        .search-form button {
+            padding: 5px 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+        }
+
+        .search-form button:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
     <header>
+        <!-- Home, Profile, and Archive Links -->
         <a href="{{ url_for('challenges.home') }}">Home</a>
-        <a href="{{ url_for('profile.view_profile') }}">Profile</a>
-        <a href="{{ url_for('search.search') }}">Search</a>
-        <a href="{{ url_for('challenges.archive') }}">Archive</a>
-        <!-- Zobrazí možnost odhlášení pouze na stránce profilu -->
-        {% if request.endpoint == 'profile.view_profile' %}
-            | <a href="{{ url_for('profile.logout') }}">Logout</a>
-        {% endif %}
+
+        <!-- Vyhledávací formulář uprostřed -->
+        <form class="search-form" action="{{ url_for('search.search') }}" method="POST">
+            <input type="text" name="query" placeholder="Search..." required>
+            <button type="submit">Search</button>
+        </form>
+
+        <!-- Profil a logout položky -->
+        <div>
+            <a href="{{ url_for('profile.view_profile') }}">Profile</a>
+            <a href="{{ url_for('challenges.archive') }}">Archive</a>
+            {% if request.endpoint == 'profile.view_profile' %}
+                | <a href="{{ url_for('profile.logout') }}">Logout</a>
+            {% endif %}
+        </div>
     </header>
     <main>
         {% block content %}{% endblock %}
