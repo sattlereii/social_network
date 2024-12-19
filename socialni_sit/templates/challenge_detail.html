@@ -1,25 +1,58 @@
 {% extends "base.html" %}
+
 {% block content %}
+    <h2>{{ challenge['name'] }}</h2>
+    <p><strong>Popis:</strong> {{ challenge['description'] }}</p>
 
-<h2>{{ challenge['name'] }}</h2>
-<p>{{ challenge['description'] }}</p>
-<p>Duration: {{ challenge['duration'] }} days</p>
-<p>Time remaining: {{ challenge['time_remaining'] }} days</p>
+    <p><strong>Hashtagy:</strong> 
+        {% if challenge['hashtags'] %}
+            {{ challenge['hashtags'] | join(', ') }}
+        {% else %}
+            Žádné hashtagy
+        {% endif %}
+    </p>
 
-{% if user_completed %}
-    <p>You have successfully completed this challenge!</p>
-{% elif user_joined %}
-    <p>You are registered for this challenge!</p>
-    <form method="post">
-        <label for="result">Enter your result:</label>
-        <input id="result" name="result" required>
-        <button type="submit">Submit Result</button>
-    </form>
-{% else %}
-    <form method="post">
-        <button type="submit" name="join" value="true">Join Challenge</button>
-    </form>
-{% endif %}
+    <p><strong>Dny do konce:</strong> 
+        {% if time_remaining >= 0 %}
+            {{ time_remaining }} dny
+        {% else %}
+            Výzva skončila
+        {% endif %}
+    </p>
 
-<a href="{{ url_for('challenges.home') }}">Back to Home</a>
+    <div>
+        {% if not user_joined %}
+            <!-- Pokud uživatel není připojen, zobrazí se tlačítko pro připojení k výzvě -->
+            <form method="POST">
+                <button type="submit" name="join" class="btn btn-primary">Připojit se k výzvě</button>
+            </form>
+        {% elif not user_completed %}
+            <!-- Pokud uživatel je připojen, ale ne dokončil výzvu, zobrazí se formulář pro výsledek -->
+            <form method="POST">
+                <div class="form-group">
+                    <label for="result">Výsledek:</label>
+                    <input type="text" class="form-control" id="result" name="result" required>
+                </div>
+                <button type="submit" class="btn btn-success">Dokončit výzvu</button>
+            </form>
+            <!-- Tlačítko pro odpojení od výzvy -->
+            <form method="POST">
+                <button type="submit" name="leave" class="btn btn-danger mt-2">Odpojit se od výzvy</button>
+            </form>
+        {% else %}
+            <!-- Pokud uživatel dokončil výzvu, zobrazí se potvrzení -->
+            <p>Výzvu jste již dokončili s výsledkem: {{ user_completed[0]['c']['result'] }}</p>
+        {% endif %}
+    </div>
+
+    <div>
+        {% if is_creator %}
+            <form method="POST" action="{{ url_for('challenges.delete_challenge', challenge_id=challenge['id']) }}">
+                <button type="submit" class="btn btn-danger">Smazat výzvu</button>
+            </form>
+        {% endif %}
+    </div>
 {% endblock %}
+
+
+

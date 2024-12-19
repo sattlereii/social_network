@@ -1,61 +1,65 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, session, redirect, url_for, flash, request
 from db.neo4j_connection import Neo4jConnection
 
 profile_blueprint = Blueprint('profile', __name__)
 
 @profile_blueprint.route('/profile')
+@profile_blueprint.route('/profile')
 def view_profile():
     if 'username' not in session:
         return redirect(url_for('auth.login'))
 
-    username = session['username']
     conn = Neo4jConnection()
 
-    # Načtení bodů uživatele a role
+    # Načíst uživatelské údaje
     user_data = conn.query(
-        "MATCH (u:User {username: $username}) RETURN u.points AS points, u.role AS role",
-        {'username': username}
+        "MATCH (u:User {username: $username}) RETURN u", 
+        {'username': session['username']}
     )
-    points = user_data[0]['points'] if user_data and 'points' in user_data[0] else 0
-    role = user_data[0]['role'] if user_data and 'role' in user_data[0] else "user"
+    if not user_data:
+        flash("Uživatel nebyl nalezen.", "danger")
+        return redirect(url_for('auth.login'))
+    
+    user = user_data[0]['u']
 
-    # Výzvy, které uživatel vytvořil
+    # Načíst výzvy, které uživatel vytvořil, k nimž se přihlásil nebo je dokončil
     created_challenges = conn.query(
         """
         MATCH (u:User {username: $username})-[:CREATED]->(c:Challenge)
-        RETURN c.id AS id, c.name AS name, c.hashtags AS hashtags
+        RETURN c
         """,
-        {'username': username}
+        {'username': session['username']}
     )
-    created_challenges = created_challenges if created_challenges else []  # Pokud je None, nastav prázdný seznam
-
-    # Debug: výpis dat vytvořených výzev
-    print("Created Challenges Debug:", created_challenges)
-
-    # Splněné výzvy
+    
+    joined_challenges = conn.query(
+        """
+        MATCH (u:User {username: $username})-[:JOINED]->(c:Challenge)
+        RETURN c
+        """,
+        {'username': session['username']}
+    )
+    
     completed_challenges = conn.query(
         """
-        MATCH (u:User {username: $username})-[rel:COMPLETED]->(c:Challenge)
-        RETURN c.id AS id, c.name AS name, rel.result AS result
+        MATCH (u:User {username: $username})-[:COMPLETED]->(c:Challenge)
+        RETURN c
         """,
-        {'username': username}
+        {'username': session['username']}
     )
-    completed_challenges = completed_challenges if completed_challenges else []  # Pokud je None, nastav prázdný seznam
 
-    # Debug: výpis dat sezení
-    print("Session data:", session)
+    # Načíst body uživatele
+    points = user.get('points', 0)
 
     conn.close()
 
     return render_template(
         'profile.html',
-        user={'username': username, 'points': points},
+        user=user,
         created_challenges=created_challenges,
+        joined_challenges=joined_challenges,
         completed_challenges=completed_challenges,
-        is_self=True,
-        is_admin=(role == "admin")  # Kontrola, zda je uživatel admin
+        points=points
     )
-
 
 @profile_blueprint.route('/profile/edit', methods=['GET', 'POST'])
 def edit_profile():

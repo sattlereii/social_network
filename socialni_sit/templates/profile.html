@@ -1,83 +1,73 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>{{ user['username'] }}'s Profile</h2>
-<p><strong>Činky:</strong> {{ user['points'] }} 💪</p>
+    <h2>Profil uživatele {{ user.username }}</h2>
+    
+    <div>
+        <h3>Údaje uživatele</h3>
+        <p><strong>Uživatelské jméno:</strong> {{ user.username }}</p>
+        <p><strong>Počet bodů:</strong> {{ points }}</p>
 
-{% if created_challenges %}
-<h3>Created Challenges</h3>
-<ul>
-    {% for challenge in created_challenges %}
-    <li>
-        <a href="{{ url_for('challenges.challenge_detail', challenge_id=challenge['id']) }}">
-            {{ challenge['name'] }}
-        </a>
-        <br>
-        Hashtags:
-        {% if challenge['hashtags'] %}
-            {{ challenge['hashtags']|join(', ') }}
-        {% else %}
-            No hashtags
+        {% if user.username == session['username'] %}
+            <a href="{{ url_for('profile.edit_profile') }}" class="btn btn-primary">Upravit účet</a>
         {% endif %}
-        <!-- Tlačítko nyní využívá datový atribut -->
-        <button class="delete-btn" data-challenge-id="{{ challenge['id'] }}">🗑️</button>
-    </li>
-    {% endfor %}
-</ul>
-{% else %}
-    <p>No created challenges.</p>
-{% endif %}
+    </div>
 
-<h3>Completed Challenges</h3>
-{% if completed_challenges %}
-    <ul>
-        {% for challenge in completed_challenges %}
-        <li>
-            <strong>{{ challenge['c']['name'] }}</strong> -
-            Result: {{ challenge['result'] if challenge['result'] else 'No result available' }}
-        </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No completed challenges.</p>
-{% endif %}
+    <hr>
 
-{% if is_admin %}
-    <a href="{{ url_for('admin.admin_menu') }}">Go to Admin Menu</a>
-{% endif %}
+    <div>
+        <h3>Vytvořené výzvy</h3>
+        {% if created_challenges %}
+            <ul>
+                {% for challenge in created_challenges %}
+                    <li>
+                        <strong>{{ challenge['c']['name'] }}</strong> - {{ challenge['c']['description'] }}
+                        <br>
+                        <em>Hashtags: {{ challenge['c']['hashtags'] | join(', ') }}</em>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Žádné výzvy ještě nevytvořeny.</p>
+        {% endif %}
+    </div>
 
-{% if is_self %}
-    <a href="{{ url_for('profile.edit_profile') }}">Edit Profile</a> |
-    <a href="{{ url_for('profile.logout') }}">Logout</a>
-{% endif %}
+    <hr>
 
-<script>
-    // Event delegation for delete buttons
-    document.addEventListener('click', function(event) {
-        if (event.target.matches('.delete-btn')) {
-            const challengeId = event.target.getAttribute('data-challenge-id');
+    <div>
+        <h3>Připojené výzvy</h3>
+        {% if joined_challenges %}
+            <ul>
+                {% for challenge in joined_challenges %}
+                    <li>
+                        <strong>{{ challenge['c']['name'] }}</strong> - {{ challenge['c']['description'] }}
+                        <br>
+                        <em>Hashtags: {{ challenge['c']['hashtags'] | join(', ') }}</em>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Nejste připojeni k žádné výzvě.</p>
+        {% endif %}
+    </div>
 
-            const confirmation = confirm("Are you sure you want to delete this challenge?");
-            if (confirmation) {
-                fetch(`/delete_challenge/${challengeId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert("Challenge deleted successfully!");
-                        location.reload();
-                    } else {
-                        alert(`Failed to delete the challenge: ${data.error}`);
-                    }
-                })
-                .catch(error => {
-                    console.error("Error occurred:", error);
-                    alert("An error occurred while deleting the challenge.");
-                });
-            }
-        }
-    });
-</script>
+    <hr>
+
+    <div>
+        <h3>Dokončené výzvy</h3>
+        {% if completed_challenges %}
+            <ul>
+                {% for challenge in completed_challenges %}
+                    <li>
+                        <strong>{{ challenge['c']['name'] }}</strong> - {{ challenge['c']['description'] }}
+                        <br>
+                        <em>Hashtags: {{ challenge['c']['hashtags'] | join(', ') }}</em>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Žádné výzvy ještě nebyly dokončeny.</p>
+        {% endif %}
+    </div>
+
 {% endblock %}

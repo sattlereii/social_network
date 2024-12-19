@@ -85,7 +85,7 @@ def archive():
 @challenges_blueprint.route('/challenge/<challenge_id>', methods=['GET', 'POST'])
 def challenge_detail(challenge_id):
     if 'username' not in session:
-        return redirect(url_for('auth.login'))
+        return render_template('challenge_detail.html', challenge_id=challenge_id, user_joined=False, user_completed=False)
 
     conn = Neo4jConnection()
 
@@ -95,12 +95,36 @@ def challenge_detail(challenge_id):
         {'id': challenge_id}
     )
     if not challenge_data:
-        flash("Challenge not found!", "danger")
+        flash("Výzva nebyla nalezena.", "danger")
         return redirect(url_for('challenges.home'))
 
     challenge = challenge_data[0]['c']
+    
+    # Zkontrolovat, zda je aktuální uživatel tvůrcem výzvy
+    is_creator = challenge['created_by'] == session['username']
+    
+    # Vypočítat čas zbývající do konce výzvy
+    created_at = datetime.strptime(challenge['created_at'], "%Y-%m-%d")
+    duration_days = int(challenge['duration'])
+    end_date = created_at + timedelta(days=duration_days)
+    time_remaining = (end_date - datetime.now()).days
 
-    # Zpracování formuláře
+    # Kontrola, zda uživatel přihlásil nebo dokončil výzvu
+    user_joined = conn.query(
+        """
+        MATCH (u:User {username: $username})-[:JOINED]->(c:Challenge {id: $id})
+        RETURN c
+        """,
+        {'username': session['username'], 'id': challenge_id}
+    )
+    user_completed = conn.query(
+        """
+        MATCH (u:User {username: $username})-[:COMPLETED]->(c:Challenge {id: $id})
+        RETURN c
+        """,
+        {'username': session['username'], 'id': challenge_id}
+    )
+
     if request.method == 'POST':
         if 'result' in request.form:
             result = request.form['result']
@@ -123,11 +147,39 @@ def challenge_detail(challenge_id):
             flash("Výzvu jste úspěšně dokončili a získali jste 1 činku!", "success")
             return redirect(url_for('profile.view_profile'))
 
+        elif 'join' in request.form:
+            # Připojit se k výzvě
+            if not user_joined and not user_completed:
+                conn.query(
+                    "MATCH (u:User {username: $username}), (c:Challenge {id: $id}) "
+                    "MERGE (u)-[:JOINED]->(c)",
+                    {'username': session['username'], 'id': challenge_id}
+                )
+                conn.close()
+                flash("Připojili jste se k výzvě!", "success")
+                return redirect(url_for('challenges.challenge_detail', challenge_id=challenge_id))
+
+        elif 'leave' in request.form:
+            # Odpojit se od výzvy
+            if user_joined and not user_completed:
+                conn.query(
+                    "MATCH (u:User {username: $username})-[r:JOINED]->(c:Challenge {id: $id}) "
+                    "DELETE r",
+                    {'username': session['username'], 'id': challenge_id}
+                )
+                conn.close()
+                flash("Odpojili jste se od výzvy!", "info")
+                return redirect(url_for('challenges.challenge_detail', challenge_id=challenge_id))
+
     conn.close()
 
     return render_template(
         'challenge_detail.html',
         challenge=challenge,
+        user_joined=bool(user_joined),
+        user_completed=bool(user_completed),
+        time_remaining=time_remaining,
+        is_creator=is_creator  # Předáváme informaci do šablony
     )
 
 @challenges_blueprint.route('/delete_challenge/<challenge_id>', methods=['POST'])
